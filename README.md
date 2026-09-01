@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**Flyrank AI Frontend AI Engineer Capstone · 🚧 In Development**
 
-## Getting Started
+ALYMERA is an AI-powered workspace designed for developers and graduating students who manage both **software projects and job applications**.
 
-First, run the development server:
+Instead of using separate tools for managing coding projects and tracking a job search, ALYMERA brings both workflows together.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 💻 Build Mode
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+AI-assisted project management:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Turn an application idea into development tasks
+- Manage tasks through a Kanban board
+- Drag and drop tasks
+- Estimate development work
+- Get AI coding/project assistance
+- Interact with a streaming AI assistant
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🎯 Career Mode
 
-## Learn More
+AI-assisted job hunting:
 
-To learn more about Next.js, take a look at the following resources:
+- Track job applications
+- Organize applications with a Kanban workflow
+- Compare jobs against a resume
+- Generate resume–job alignment scores
+- Identify missing or relevant skills
+- Tailor resume content
+- Generate customized cover letters
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🛠️ Technologies
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`Next.js` `React` `TypeScript` `Tailwind CSS` `shadcn/ui`
 
-## Deploy on Vercel
+`Supabase` `PostgreSQL` `Vercel AI SDK` `Groq`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`dnd-kit` `Git` `GitHub` `Vercel`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Status:** 🚧 Actively building
+
+
+## 🤝 Contact
+Alyssa Jade P. Merjilla  
+- LinkedIn: [linkedin.com/in/alyssa-jade-merjilla](https://linkedin.com/in/alyssa-jade-merjilla)
+- GitHub: [@alijilla](https://github.com/alijilla)
