@@ -6,7 +6,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <body className="">
+    <body className="bg-card">
     <SidebarLayout>
       {children}
     </SidebarLayout>
