@@ -6,11 +6,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <body className="bg-card">
-    <SidebarLayout>
+    <main >
+    <SidebarLayout >
       {children}
     </SidebarLayout>
-    </body>
+    </main>
 
+    
   );
 }
