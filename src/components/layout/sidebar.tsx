@@ -24,7 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   LayoutDashboard,
   Hammer,
@@ -40,6 +40,8 @@ import {
   UserRound,
   Settings,
 } from "lucide-react";
+import { Profile } from "@/types/profile"
+import { getInitials } from "@/lib/utils"
 
 export function SidebarLayout({
   children,
@@ -77,15 +79,7 @@ export function SidebarLayout({
           { name: "Projects",
             href: "/build",
           },
-          { name: "Kanban",
-            href: "/build/kanban",
-          },
-          { name: "Roadmap",
-            href: "/build/roadmap",
-          },
-          { name: "Coding Assistant",
-            href: "/build/coding-assistant",
-          },
+      
         ],
       },
       { icon:<BriefcaseBusiness className="w-4 h-4 m-1" />,
@@ -126,6 +120,12 @@ export function SidebarLayout({
     ],
   },
 ];
+
+      const profile: Profile ={
+        name:"Alyssa Jade Merjilla",
+        role:"Frontend AI Engineer",
+        imageSrc:"/img/icon.png"
+      }
   return (
 <SidebarProvider>
       <Sidebar className=" bg-background text-foreground backdrop-blur">
@@ -177,11 +177,16 @@ export function SidebarLayout({
        <div aria-label="User" className="box-border mt-auto flex flex-wrap gap-3 p-2 items-center">
          
          <Avatar className="size-[32px] flex-shrink-0">
-            <AvatarFallback>AJ</AvatarFallback>
+            <AvatarImage 
+            src={profile.imageSrc} 
+            className="w-full h-full object-cover"
+            />
+            <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
+
           </Avatar>
         <div>
-           <div aria-label="name" className="truncate text-[12.5px]">Alyssa Jade P. Merjilla</div>
-        <div aria-label="role" className="text-muted-foreground text-[10px] ">Frontend AI Engineer</div>
+           <div aria-label="name" className="truncate text-[12.5px]">{profile.name}</div>
+        <div aria-label="role" className="text-muted-foreground text-[10px] ">{profile.role}</div>
         </div>
         <LogOut className="ml-auto w-4 h-4"/>
          </div>  
@@ -200,8 +205,11 @@ export function SidebarLayout({
            <BellRingIcon className="w-4 h-4 " />
           </div>
           <div className="flex items-center gap-2 px-2">
-          <Avatar className="size-7 flex-shrink-0">
-            <AvatarFallback>AJ</AvatarFallback>
+         <Avatar className="size-[32px] flex-shrink-0">
+            <AvatarImage 
+            src={profile.imageSrc}
+            className="w-full h-full object-cover" />
+            <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
           </Avatar>
           </div>    
         </header>

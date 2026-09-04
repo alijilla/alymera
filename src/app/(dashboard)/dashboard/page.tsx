@@ -9,6 +9,15 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 
+import type {
+  DashboardStat,
+  ActiveProject,
+  Task,
+  RecentActivity,
+  CareerSnapshot,
+  CareerRoadmap,
+} from "@/types/dashboard"
+
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Calendar, SparklesIcon } from "lucide-react"
@@ -25,36 +34,43 @@ import {
   BadgeCheck,
 } from "lucide-react"
 
+import { milestones as milestoneData, milestones} from  "@/data/milestonedata"
+import { tasks as taskData } from "@/data/taskdata"
+import { actproject } from "@/data/projectdata"
+const totalProjects = actproject.length
+
+
+const completedTasks = taskData.filter(
+  (task) => task.status === "Done"
+).length
+
 export default function DashboardPage() {
   const hour = new Date().getHours()
-  const stats = [
+  const stats: DashboardStat[] = [
     {
       title: "Active Projects",
-      value: 2,
-      description: "+1 this week",
+      value:  totalProjects,
       icon: <FolderKanban className="w-5 h-5 text-blue-500" />
     },
     {
       title: "Tasks Completed",
-      value: 3,
-      description: "+2 this week",
+      value: completedTasks,
       icon: <CircleCheck className="w-5 h-5 text-green-500" />
     },
     {
       title: "Applications",
       value: 3,
-      description: "+2 this week",
       icon: <Send className="w-5 h-5 text-orange-500" />
     },
     {
       title: "Career Score",
       value: "30%",
-      description: "+2 this week",
       icon: <UserRoundCheck className="w-5 h-5 text-purple-500" />
     }
   ]
-
-  const actproject = {
+   
+  
+  const actproject: ActiveProject = {
     title: "Active Project",
     name: "AI Project Manager",
     shortAbout: "Build an AI powered project management",
@@ -68,27 +84,27 @@ export default function DashboardPage() {
     )
   }
 
-  const task = [
+  const task: Task[]= [
     { title: "Finish Kanban UI", dueDate: "Today" },
     { title: "Connect Supabase", dueDate: "Tomorrow" },
     { title: "Implement AI Solution", dueDate: "Sep 5" },
     { title: "Write Unit Test", dueDate: "Sep 7" },
   ]
 
-  const recent = [
+  const recent: RecentActivity[] = [
     { icon: <CircleCheck className="w-4 h-4 text-green-500" />, title: "Finish Kanban UI", time: "2 hrs ago" },
     { icon: <CircleCheck className="w-4 h-4 text-green-500" />, title: "Connect Supabase", time: "2 hrs ago" },
     { icon: <CircleCheck className="w-4 h-4 text-green-500" />, title: "Implement AI Solution", time: "2 hrs ago" },
     { icon: <CircleCheck className="w-4 h-4 text-green-500" />, title: "Write Unit Test", time: "2 hrs ago" },
   ]
 
-  const careerSnapshot = [
+  const careerSnapshot: CareerSnapshot[] = [
     { title: "Applications", value: "12", icon: <Send className="h-5 w-5 text-muted-foreground" /> },
     { title: "Interviews", value: "3", icon: <CalendarCheck className="h-5 w-5 text-muted-foreground" /> },
     { title: "Offers", value: "1", icon: <BadgeCheck className="h-5 w-5 text-muted-foreground" /> },
   ]
 
-  const careerRoadmap = {
+  const careerRoadmap: CareerRoadmap  = {
     title: "Frontend Developer Roadmap",
     completed: 3,
     total: 6,
@@ -142,7 +158,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stat.description}
+                
               </p>
             </CardContent>
           </Card>
