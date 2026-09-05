@@ -33,11 +33,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { CalendarIcon, PlusCircleIcon, SparklesIcon } from "lucide-react"
+import { CalendarIcon, PlusCircleIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { getInitials } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { toast } from "sonner"
 import {
   ArrowRight,
 } from "lucide-react"
@@ -68,7 +69,6 @@ import { calculateProgress,
 
 
 
-
 export default function DashboardPage() {
 
 
@@ -89,6 +89,7 @@ export default function DashboardPage() {
     console.log(values)
     projectForm.reset()
     setIsDialogOpen(false) 
+    toast.success("Project Created")
   }
   
   
