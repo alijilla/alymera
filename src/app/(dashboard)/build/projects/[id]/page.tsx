@@ -34,6 +34,9 @@ import { calculateProgress,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { recentActivities } from "@/data/activity"
 import { Roadmap } from "@/components/build/roadmap"
+import { CodingAssistant } from "@/components/build/coding-assistant"
+
+
 
 const columns = [
   "Backlog",
@@ -260,7 +263,15 @@ const progress = calculateProgress(completedMiles, totalMiles)
 
       </TabsContent>
       <TabsContent value="roadmap"><Roadmap projectId={project.id} /></TabsContent>
-      <TabsContent value="ai">Coding Assistant</TabsContent>
+      <TabsContent value="ai">
+            <Card>
+      <CardContent className="p-4">
+       <CodingAssistant />
+      </CardContent>
+    </Card>
+       
+        
+        </TabsContent>
     </Tabs>
             </div>
 
