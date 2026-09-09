@@ -56,7 +56,7 @@ export function Roadmap({ projectId }: RoadmapProps) {
           </div>
           <h3 className="text-lg font-bold mb-2">No Milestones Yet</h3>
           <p className="text-muted-foreground text-sm max-w-md">
-            You haven't added any milestones to this project's roadmap. 
+            You haven&apos;t added any milestones to this project&apos;s roadmap. 
             Milestones help you track major phases of your project.
           </p>
         </div>

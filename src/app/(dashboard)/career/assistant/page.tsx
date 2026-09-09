@@ -1,10 +1,10 @@
 "use client";
 
+import { CareerAssistant } from "@/components/career/assistant";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
-import { AlymeraAssistant } from "@/components/aly/alymera-assistant";
 
-export default function AlymeraAIPage() {
+export default function CareerAssistantPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -12,21 +12,19 @@ export default function AlymeraAIPage() {
           <CardHeader className="p-0">
             <CardTitle>
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-2">
-                 <Sparkles className="w-8 h-8 text-orange-400" />
-                 Alymera AI
+                 <Sparkles className="w-8 h-8 text-blue-500" />
+                 Career Assistant
               </h1>
             </CardTitle>
             <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Your AI workspace assistant. Ask about projects, tasks, career, or what to do next.
+              Analyze job descriptions against your resume and get tailored insights.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 flex-shrink-0">
-            {/* Optional right-side content */}
           </CardContent>
         </div>
       </Card>
-
-      <AlymeraAssistant />
+      <CareerAssistant />
     </div>
   );
 }

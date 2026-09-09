@@ -24,7 +24,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SidebarUserInfo } from "./SidebarUserInfo";
 import {
   LayoutDashboard,
   Hammer,
@@ -196,24 +197,7 @@ export function SidebarLayout({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="p-4">
-       <div aria-label="User" className="box-border mt-auto flex flex-wrap gap-3 p-3 items-center hover:bg-muted/50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-border/50">
-         
-         <Avatar className="size-[36px] flex-shrink-0 shadow-sm border border-border/50">
-            <AvatarImage 
-            src={profile.imageSrc} 
-            className="w-full h-full object-cover"
-            />
-            <AvatarFallback className="font-bold text-primary bg-primary/10">{getInitials(profile.name)}</AvatarFallback>
-
-          </Avatar>
-        <div className="flex-1 min-w-0">
-           <div aria-label="name" className="truncate text-sm font-semibold text-foreground leading-tight">{profile.name}</div>
-        <div aria-label="role" className="text-muted-foreground text-xs truncate mt-0.5">{profile.role}</div>
-        </div>
-        <div className="bg-background/50 p-1.5 rounded-lg shadow-sm border border-border/50">
-          <LogOut className="w-4 h-4 text-muted-foreground"/>
-        </div>
-         </div>  
+        <SidebarUserInfo profile={profile} />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>

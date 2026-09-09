@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import { HeaderUserInfo } from "./HeaderUserInfo"
 
 export function Header() {
   const pathname = usePathname()
@@ -13,6 +14,7 @@ export function Header() {
   return (
     <header>
       <h1 className="uppercase">{title}</h1>
+      <HeaderUserInfo />
 
     </header>
   )
