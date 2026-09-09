@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { Toaster } from "@/components/ui/sonner"
 
 import { Inter } from "next/font/google";
 
@@ -30,7 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col tracking-wide">{children}</body>
+      <body className="min-h-full flex flex-col tracking-wide">
+        {children}
+        <Toaster />
+
+      </body>
     </html>
   );
 }

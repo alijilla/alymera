@@ -1,11 +1,19 @@
 import { z } from "zod"
 
+export const milestoneSchema = z.object({
+  name: z.string().min(1, "Must be atleast 1 char"),
+  description: z.string().min(1, "Must be atleast 1 char"),
+  status: z.enum(["Up Coming", "In Progress", "Complete"]),
+  due_date: z.date().optional(),
+})
+
 export const newProjectSchema = z.object ({
       name: z.string().min(1, "Must be atleast 1 char"),
       description: z.string().min(1, "Must be atleast 1 char" ), 
-      techstack:z.array(z.string()).optional(),
       status: z.enum(["Planning", "In Progress", "Complete"]),
-      dueDate: z.date().optional(),
-      imageSrc: z.any().optional(),
+      tech_stack:z.string().optional(),
+      image_src: z.any().optional(),
+      due_date: z.date().optional(),
+      milestones: z.array(milestoneSchema).optional(),
 })
 

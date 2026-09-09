@@ -4,27 +4,18 @@ export const tasks = [
   // ─────────────────────────
 
   {
-    id: "t1",
-    project_id: "p1",
-    milestone_id: "m1",
     name: "Set up Next.js project",
     status: "Done",
     description: "Initialize the Next.js and TypeScript project.",
     dueDate: "2026-08-05",
   },
   {
-    id: "t2",
-    project_id: "p1",
-    milestone_id: "m1",
     name: "Configure Tailwind CSS",
     status: "Done",
     description: "Set up Tailwind CSS and the project styling system.",
     dueDate: "2026-08-06",
   },
   {
-    id: "t3",
-    project_id: "p1",
-    milestone_id: "m1",
     name: "Set up shadcn/ui",
     status: "Done",
     description: "Install and configure reusable UI components.",
@@ -32,27 +23,18 @@ export const tasks = [
   },
 
   {
-    id: "t4",
-    project_id: "p1",
-    milestone_id: "m2",
     name: "Build landing page",
     status: "Done",
     description: "Create the main portfolio hero and introduction.",
     dueDate: "2026-08-12",
   },
   {
-    id: "t5",
-    project_id: "p1",
-    milestone_id: "m2",
     name: "Build projects section",
     status: "Done",
     description: "Display portfolio projects and technologies.",
     dueDate: "2026-08-15",
   },
   {
-    id: "t6",
-    project_id: "p1",
-    milestone_id: "m2",
     name: "Make portfolio responsive",
     status: "Done",
     description: "Optimize the portfolio for mobile and desktop screens.",
@@ -60,27 +42,19 @@ export const tasks = [
   },
 
   {
-    id: "t7",
-    project_id: "p1",
-    milestone_id: "m3",
     name: "Create AI chat interface",
     status: "Done",
     description: "Build the Ask Me Anything chat interface.",
     dueDate: "2026-08-21",
   },
   {
-    id: "t8",
-    project_id: "p1",
-    milestone_id: "m3",
     name: "Connect AI API",
     status: "Done",
     description: "Connect the portfolio to an AI API.",
     dueDate: "2026-08-23",
   },
   {
-    id: "t9",
-    project_id: "p1",
-    milestone_id: "m3",
+
     name: "Add AI error handling",
     status: "Done",
     description: "Handle failed AI requests and loading states.",
@@ -88,27 +62,21 @@ export const tasks = [
   },
 
   {
-    id: "t10",
-    project_id: "p1",
-    milestone_id: "m4",
+
     name: "Deploy to Vercel",
     status: "Done",
     description: "Deploy the portfolio application.",
     dueDate: "2026-08-27",
   },
   {
-    id: "t11",
-    project_id: "p1",
-    milestone_id: "m4",
+
     name: "Test production build",
     status: "Done",
     description: "Verify the application works correctly in production.",
     dueDate: "2026-08-29",
   },
   {
-    id: "t12",
-    project_id: "p1",
-    milestone_id: "m4",
+
     name: "Update README",
     status: "Done",
     description: "Document the project and technology stack.",
