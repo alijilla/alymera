@@ -41,7 +41,15 @@ import {
   Settings,
 } from "lucide-react";
 import { Profile } from "@/types/profile"
-import { getInitials } from "@/lib/utils"
+
+
+export function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join(" ")
+    .toUpperCase()
+}
 
 export function SidebarLayout({
   children,
@@ -128,29 +136,43 @@ export function SidebarLayout({
       }
   return (
 <SidebarProvider>
-      <Sidebar className=" bg-background text-foreground backdrop-blur">
-        <SidebarHeader><div className="pt-2.5 px-3 pb-2 text-xl font-black tracking-[0.22em]">ALY<span className="text-[#8b5cf6]">MERA</span></div></SidebarHeader>
-        <SidebarContent> 
+      <Sidebar className="bg-card border-r border-border/50 text-foreground">
+        <SidebarHeader>
+          <div className="pt-6 px-4 pb-4 flex items-center gap-2">
+            <div className="bg-primary/10 p-1.5 rounded-lg border border-primary/20">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+            </div>
+            <div className="text-xl font-black tracking-widest">
+              ALY<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-400">MERA</span>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="px-2"> 
           <SidebarGroup>
             <SidebarGroupContent>
                <SidebarMenu>
                {navlist.map((navl, i) => (
-                <div aria-label={navl.category} key={i} ><span className="mx-3 mb-10 mt-10 text-[10px] tracking-[0.15em] text-muted-foreground">{navl.category}</span>
+                <div aria-label={navl.category} key={i} className="mb-6">
+                  <div className="mx-4 mb-3 mt-4 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                    {navl.category}
+                  </div>
                 {navl.parts.map((tab) => (
                  <SidebarMenuItem key={tab.tabhref}>
                   <Collapsible>
                   <CollapsibleTrigger asChild>
-                 <SidebarMenuButton className="flex w-full items-center gap-2.5 mx-3
-                 " asChild>
-                  <Link href={tab.tabhref}>{tab.icon} {tab.tabname}</Link>
+                 <SidebarMenuButton className="flex w-full items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium group" asChild>
+                  <Link href={tab.tabhref}>
+                    <span className="group-hover:scale-110 transition-transform duration-200">{tab.icon}</span> 
+                    <span className="text-sm">{tab.tabname}</span>
+                  </Link>
                   </SidebarMenuButton>
                   </CollapsibleTrigger>
                  {tab.drop?.map((dp, d) => (
               <CollapsibleContent key={d}> 
-                    <SidebarMenuSub>
+                    <SidebarMenuSub className="pl-9 pr-2 border-l-2 border-muted/50 ml-5 my-1">
                       
                     <SidebarMenuSubItem>                       
-                          <SidebarMenuSubButton asChild>
+                          <SidebarMenuSubButton className="rounded-lg hover:bg-muted/50 transition-colors text-sm text-muted-foreground hover:text-foreground" asChild>
                             <Link href={dp.href}>{dp.name}</Link>
                           </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -173,49 +195,51 @@ export function SidebarLayout({
     </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-       <div aria-label="User" className="box-border mt-auto flex flex-wrap gap-3 p-2 items-center">
+        <SidebarFooter className="p-4">
+       <div aria-label="User" className="box-border mt-auto flex flex-wrap gap-3 p-3 items-center hover:bg-muted/50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-border/50">
          
-         <Avatar className="size-[32px] flex-shrink-0">
+         <Avatar className="size-[36px] flex-shrink-0 shadow-sm border border-border/50">
             <AvatarImage 
             src={profile.imageSrc} 
             className="w-full h-full object-cover"
             />
-            <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
+            <AvatarFallback className="font-bold text-primary bg-primary/10">{getInitials(profile.name)}</AvatarFallback>
 
           </Avatar>
-        <div>
-           <div aria-label="name" className="truncate text-[12.5px]">{profile.name}</div>
-        <div aria-label="role" className="text-muted-foreground text-[10px] ">{profile.role}</div>
+        <div className="flex-1 min-w-0">
+           <div aria-label="name" className="truncate text-sm font-semibold text-foreground leading-tight">{profile.name}</div>
+        <div aria-label="role" className="text-muted-foreground text-xs truncate mt-0.5">{profile.role}</div>
         </div>
-        <LogOut className="ml-auto w-4 h-4"/>
+        <div className="bg-background/50 p-1.5 rounded-lg shadow-sm border border-border/50">
+          <LogOut className="w-4 h-4 text-muted-foreground"/>
+        </div>
          </div>  
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset>
-        <header className="flex items-center border-b pt-2 px-3 pb-2">
+      <SidebarInset className="bg-background">
+        <header className="flex items-center border-b border-border/50 pt-2 px-4 pb-2 sticky top-0 z-50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
           
-          <div className="flex items-center font-extrabold tracking-[0.22em]" >
-          <SidebarTrigger />
+          <div className="flex items-center font-bold tracking-wider" >
+          <SidebarTrigger className="mr-2 hover:bg-muted/50 rounded-lg transition-colors" />
           <Header />
           </div>
           <div className="flex-1"></div>
-          <div className="flex items-center gap-3">
-           <BellRingIcon className="w-4 h-4 " />
+          <div className="flex items-center gap-4">
+           <div className="p-2 hover:bg-muted/50 rounded-full transition-colors cursor-pointer border border-transparent hover:border-border/50">
+             <BellRingIcon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+           </div>
           </div>
-          <div className="flex items-center gap-2 px-2">
-         <Avatar className="size-[32px] flex-shrink-0">
+          <div className="flex items-center gap-2 px-3">
+         <Avatar className="size-[36px] flex-shrink-0 cursor-pointer shadow-sm border border-border/50 hover:opacity-90 transition-opacity">
             <AvatarImage 
             src={profile.imageSrc}
             className="w-full h-full object-cover" />
-            <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
+            <AvatarFallback className="font-bold text-primary bg-primary/10">{getInitials(profile.name)}</AvatarFallback>
           </Avatar>
           </div>    
         </header>
-        <main className="
-        
-        ">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

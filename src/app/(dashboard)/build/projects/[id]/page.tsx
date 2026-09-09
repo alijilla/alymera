@@ -1,4 +1,6 @@
-import { actproject } from "@/data/projectdata"
+"use client"
+import {useState, useEffect} from "react"
+import { supabase } from "@/lib/supabase/client";
 import {
   Card,
   CardHeader,
@@ -13,13 +15,6 @@ import { Progress } from "@/components/ui/progress"
 import  Link  from "next/link"
 import { ArrowLeft, Calendar1Icon, PlusIcon } from "lucide-react"
 import { SiGithub } from "react-icons/si";
-import { milestones } from  "@/data/milestonedata"
-import { tasks } from "@/data/taskdata"
-import { calculateProgress, 
-  calculateTasksComplete, 
-  calculateTotalTask, 
-  calculateMilestoneComplete, 
-  calculateTotalMilestone } from "@/lib/utils"
   import {
   FolderKanban,
   CircleCheck,
@@ -38,6 +33,15 @@ import { CodingAssistant } from "@/components/build/coding-assistant"
 import { Overview } from "@/components/build/overview"
 import { Kanban } from "@/components/build/kanban"
 
+  type Project = {
+    id: string
+    name: string
+    description: string
+    image_src: string
+    status: string
+    tech_stack: string[]
+    due_date: string | null
+  }
 
 
 const columns = [
@@ -52,66 +56,78 @@ const columns = [
     dueDate: "Sep 7, 2026",
     nextStep: "Complete your AI project",
   }
-export default async function ProjectWorkSpace({params} : {params: Promise<{id:string}>}) {
-      const {id} = await params;
-      const project = actproject.find((project) => project.id === id)
+export default function ProjectWorkSpace({params} : {params: Promise<{id:string}>}) {
+      const [project, setProject] = useState<Project | null>(null)    
       
+         
+  useEffect(() =>{
+      async function getProject(){
+        const {id} = await params;
+        const {data, error} = await supabase 
+        .from("projects")
+        .select()
+        .eq("id", id)
+        .single();
+        if(error){
+      console.log("Project fetch error:", error.message)
+      console.log("Error code:", error.code)
+      console.log("Error details:", error.details)
+      console.log("Error hint:", error.hint)
+        }
+        setProject(data as Project ?? null)
+      }
+
+   
+      getProject()
+     },[params])
+       
+
+
+
       if (!project) {
   return <div>Project not found</div>
 }
 
-const next = tasks.find(
-  (tasks) => tasks.project_id === project.id && tasks.status === "To Do"
-
-)
-
 const projectActivities = recentActivities.filter(
   (activity) => activity.project_id === project.id
 )
-const totalMiles = calculateTotalMilestone(milestones, project.id)
-const completedMiles = calculateMilestoneComplete(milestones, project.id)
-const completedTasks = calculateTasksComplete(tasks, project.id)
-const totalTasks = calculateTotalTask(tasks, project.id)
-
-const progress = calculateProgress(completedMiles, totalMiles)
 
     return (
-         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-            <Button variant="secondary" asChild>
-              
-              <Link href="/build/"><ArrowLeft className="w-4 h-4 mr-2"/>Projects</Link>
-
+         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8">
+            <Button variant="ghost" className="hover:bg-muted/50 rounded-full pr-6" asChild>
+              <Link href="/build/"><ArrowLeft className="w-4 h-4 mr-2"/>Back to Projects</Link>
             </Button>
-              <Card className="bg-card border-none shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent">
-                <div className="flex flex-col md:flex-row md:items-center justify-between p-6 gap-4">
+            
+            <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
+                <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-6">
                   <CardHeader className="p-0">
                     <CardTitle>
-                      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                      <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                         {project.name}
                       </h1>
                     </CardTitle>
-                    <CardDescription className="text-base mt-2 text-foreground">
+                    <CardDescription className="text-base mt-2 text-muted-foreground font-medium max-w-2xl">
                     {project.description}
                     </CardDescription>
                   </CardHeader>
           <CardContent className="p-0 flex-shrink-0">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white" asChild>
+            <Button className="bg-[#24292e] hover:bg-[#2f363d] text-white rounded-xl px-6 py-5 shadow-lg shadow-black/10 transition-all hover:scale-105" asChild>
               <Link href={"/"}>
-                <SiGithub className="mr-2 h-4 w-4 text-orange-300" /> Connect Github
+                <SiGithub className="mr-2 h-5 w-5" /> Connect Github
               </Link>
             </Button>
           </CardContent>
               
                 </div>
      </Card>
-          <Tabs defaultValue="overview" className="flex flex-col space-y-4">
-      <TabsList className="rounded-full bg-muted/50 p-1">
-         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-        <TabsTrigger value="roadmap">RoadMap</TabsTrigger>
-         <TabsTrigger value="ai">Coding Assistant</TabsTrigger>
+          <Tabs defaultValue="overview" className="flex flex-col space-y-6">
+      <TabsList className="rounded-full bg-muted/50 p-1 w-full md:w-auto self-start border border-border/50">
+         <TabsTrigger value="overview" className="rounded-full px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Overview</TabsTrigger>
+        <TabsTrigger value="kanban" className="rounded-full px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Kanban Board</TabsTrigger>
+        <TabsTrigger value="roadmap" className="rounded-full px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Roadmap</TabsTrigger>
+         <TabsTrigger value="ai" className="rounded-full px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Coding Assistant</TabsTrigger>
       </TabsList>
-      <TabsContent value="overview">
+      <TabsContent value="overview" className="focus-visible:outline-none focus-visible:ring-0">
         <Overview projectId={project.id} />
       </TabsContent>
       <TabsContent value="kanban">

@@ -1,4 +1,12 @@
+"use client"
+import { useRouter } from "next/navigation"
 export default function LandingPage() {
+ const router = useRouter()
+
+ function getStarted(){
+  router.push("/login")
+
+ }
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-background">
       
@@ -17,7 +25,7 @@ export default function LandingPage() {
         
         <div className="flex gap-4 mt-8">
           {/* A button using the bright 'primary' background and 'primary-foreground' text */}
-          <button className="px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90">
+          <button className="px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90" onClick={getStarted}>
             Get Started
           </button>
           

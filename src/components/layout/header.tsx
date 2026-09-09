@@ -12,7 +12,7 @@ export function Header() {
   }
   return (
     <header>
-      <h1 className="capitalize">{title}</h1>
+      <h1 className="uppercase">{title}</h1>
 
     </header>
   )
