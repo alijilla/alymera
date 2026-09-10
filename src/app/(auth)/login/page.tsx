@@ -73,7 +73,8 @@ export default function LoginPage() {
     
            router.push("/dashboard")
              
-           }finally{
+           } catch (err) {
+            console.error("Unexpected error:", err)
             setIsSubmitting(false)
            }
           
