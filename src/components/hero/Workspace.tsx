@@ -13,10 +13,7 @@ export default function Workspace() {
   return (
 
 <group>
-<mesh>
-  <boxGeometry args={[1.4, 1.0, 0.06]} />
-  <meshStandardMaterial color="purple" />
-</mesh>
+
 <Html
  transform position={[0, 0, 0.04]} scale={0.2}>
  <Card className="w-[300px] rounded-2xl border border-border/50 bg-card/95 shadow-2xl backdrop-blur-md">
@@ -85,15 +82,6 @@ export default function Workspace() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg bg-muted/20 px-3 py-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-              <Check className="h-3 w-3 text-primary" />
-            </div>
-
-            <span className="text-xs font-medium">
-              AI integration
-            </span>
-          </div>
 
           <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
             <div className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/30">

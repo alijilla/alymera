@@ -1,7 +1,21 @@
 "use client"
 import { useRouter } from "next/navigation"
-import Hero3D from "@/components/hero/TestScene"
+
+import dynamic from "next/dynamic"
+const Scene = dynamic(
+  () => import("@/components/hero/TestScene"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    ),
+  }
+)
 export default function LandingPage() {
+  
+
  const router = useRouter()
 
  function getStarted(){
@@ -9,46 +23,45 @@ export default function LandingPage() {
 
  }
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-background">
-      
-      <div className="flex flex-row items-center m-auto gap-4 px-4">
-
-     
-      {/* A themed card using your custom colors */}
-      <div className="p-8 border rounded-xl bg-card border-border shadow-lg flex flex-col items-center">
-        
-        {/* Main text using 'foreground' */}
-       
-         <div className="text-5xl font-black tracking-widest">
-           <h1>ALY<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-400">MERA</span></h1>
-              
-           </div>
-        
-        {/* Subtitle using 'muted-foreground' */}
-        <h2 className="mt-4 text-3xl text-foreground">
-         Build. Apply. Become
-        </h2>
-
-       {/* Subtitle using 'muted-foreground' */}
-        <p className="mt-4 text-2xl text-muted-foreground">
-         AI-powered workspace designed for developers and graduating students who manage both software projects and job applications
-        </p>
-        
-        <div className="flex gap-4 mt-8">
-          {/* A button using the bright 'primary' background and 'primary-foreground' text */}
-          <button className="px-6 py-2 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90" onClick={getStarted}>
-            Get Started
-          </button>
-          
-        </div>
-
-
+<main className="min-h-screen bg-background m-auto px-4">
+  <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center gap-10 px-6 py-16 md:flex-row md:justify-between">
+    
+    <div className="max-w-2xl text-center md:text-left">
+      <div className="text-5xl font-black tracking-tight md:text-7xl">
+        ALY
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-400">
+          MERA
+        </span>
       </div>
-        
-        <div className="px-4 border rounded-xl items-center bg-primary/20 w-[400px] h-[400px]">
-          <Hero3D />
-        </div>
-       </div>
-    </main>
+
+      <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-5xl">
+        Build. Apply. Become.
+      </h1>
+
+      <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+        An AI-powered workspace for developers and graduating students to
+        build projects, manage applications, and grow their careers.
+      </p>
+
+      <div className="mt-8 flex flex-wrap justify-center gap-4 md:justify-start">
+        <button
+          onClick={getStarted}
+          className="rounded-xl bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90"
+        >
+          Get Started
+        </button>
+
+        <button className="rounded-xl border border-border px-6 py-3 font-medium transition hover:bg-muted">
+          Explore ALYMERA
+        </button>
+      </div>
+    </div>
+
+    <div className="relative h-[420px] w-[420px] md:h-[520px] md:w-[520px]">
+      <Scene />
+    </div>
+
+  </section>
+</main>
   );
 }

@@ -5,27 +5,54 @@ import * as THREE from "three"
 import {useState} from "react"
 export default function Mascot() {
 
-  const mascotRef = useRef<THREE.Group>(null);
-const { pointer } = useThree()
-const [hovered, setHovered] = useState(false)
-  const color = useRef(new THREE.Color("purple"))
-  useFrame((state) => {
-  if (!mascotRef.current) return;
-
-  const targetY = state.pointer.x; // turning left/right
-const targetX = -state.pointer.y; // looking up/down
- 
-  mascotRef.current.rotation.y =THREE.MathUtils.lerp(mascotRef.current.rotation.y, targetY, 0.1);
-  mascotRef.current.rotation.x = THREE.MathUtils.lerp(mascotRef.current.rotation.x, targetX, 0.1);
-});
-
-
+const mascotRef = useRef<THREE.Group>(null)
 const materialRef = useRef<THREE.MeshStandardMaterial>(null)
+const color = useRef(new THREE.Color("purple"))
+const [hovered, setHovered] = useState(false)
+useFrame((state) => {
+  if (!mascotRef.current || !materialRef.current) return
 
-useFrame(() => {
-  if (!materialRef.current) return
+  // 1. Follow the pointer
+  const targetY = state.pointer.x * 0.4
+  const targetX = -state.pointer.y * 0.2
 
-  const targetColor = new THREE.Color(hovered ? "red" : "purple")
+  mascotRef.current.rotation.y = THREE.MathUtils.lerp(
+    mascotRef.current.rotation.y,
+    targetY,
+    0.1
+  )
+
+  mascotRef.current.rotation.x = THREE.MathUtils.lerp(
+    mascotRef.current.rotation.x,
+    targetX,
+    0.1
+  )
+
+  // 2. Smooth hover scale
+  const targetScale = hovered ? 1.08 : 1
+
+  mascotRef.current.scale.x = THREE.MathUtils.lerp(
+    mascotRef.current.scale.x,
+    targetScale,
+    0.08
+  )
+
+  mascotRef.current.scale.y = THREE.MathUtils.lerp(
+    mascotRef.current.scale.y,
+    targetScale,
+    0.08
+  )
+
+  mascotRef.current.scale.z = THREE.MathUtils.lerp(
+    mascotRef.current.scale.z,
+    targetScale,
+    0.08
+  )
+
+  // 3. Smooth hover color
+  const targetColor = new THREE.Color(
+    hovered ? "#d805c6" : "#9333ea"
+  )
 
   color.current.lerp(targetColor, 0.05)
 
