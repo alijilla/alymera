@@ -213,29 +213,56 @@ const [deletingProject, setDeletingProject] = useState<Project | null>(null)
               }
 
         console.log("Current user:", user.id)
-                const { data: newProjectData, error } = await supabase 
-                  .from("projects")
-                  .insert({
-                  user_id: user.id,
-                  name: values.name,
-                  description:values.description,
-                  status: values.status,
-                  tech_stack: makeArray(values.tech_stack ?? ""),
-                  image_src: values.image_src,
-                due_date: values.due_date
-          ? format(values.due_date, "yyyy-MM-dd")
-          : null,})
-                  .select();
-                  
-                if (error) {
-                  console.error("Insert error:", error);
-                  toast.error(`Failed to create project: ${error.message}`);
-                  return;
-                }
+                  const { data: newProjectData, error } = await supabase 
+                    .from("projects")
+                    .insert({
+                    user_id: user.id,
+                    name: values.name,
+                    description:values.description,
+                    status: values.status,
+                    tech_stack: makeArray(values.tech_stack ?? ""),
+                    image_src: "",
+                  due_date: values.due_date
+            ? format(values.due_date, "yyyy-MM-dd")
+            : null,})
+                    .select();
+                    
+                  if (error) {
+                    console.error("Insert error:", error);
+                    toast.error(`Failed to create project: ${error.message}`);
+                    return;
+                  }
+  
+                  if (newProjectData && newProjectData.length > 0) {
+                    const newProjectId = newProjectData[0].id;
 
-                if (newProjectData && newProjectData.length > 0) {
-                  const newProjectId = newProjectData[0].id;
-                  if (values.milestones && values.milestones.length > 0) {
+                    // Image Upload
+                    if (values.image_src instanceof File) {
+                      const file = values.image_src;
+                      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                      
+                      if (!allowedTypes.includes(file.type)) {
+                        toast.error("Project created, but image must be JPG, PNG, WEBP, or GIF.");
+                      } else if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Project created, but image must be smaller than 5MB.");
+                      } else {
+                        const fileExt = file.name.split(".").pop();
+                        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+                        const filePath = `projects/${user.id}/${newProjectId}/${fileName}`;
+                        
+                        const { error: uploadError } = await supabase.storage.from("project-images").upload(filePath, file);
+                        
+                        if (uploadError) {
+                          console.error("Upload error:", uploadError);
+                          toast.error(`Project created, but image upload failed: ${uploadError.message}`);
+                        } else {
+                          const { data: { publicUrl } } = supabase.storage.from("project-images").getPublicUrl(filePath);
+                          await supabase.from("projects").update({ image_src: publicUrl }).eq("id", newProjectId);
+                        }
+                      }
+                    }
+
+                    if (values.milestones && values.milestones.length > 0) {
                     const milestonesToInsert = values.milestones.map(m => ({
                       project_id: newProjectId,
                       name: m.name,
@@ -293,6 +320,37 @@ function handleDelete(project: Project) {
               }
 
         console.log("Current user:", user.id)
+          let finalImageSrc = typeof values.image_src === "string" ? values.image_src : "";
+          
+          if (values.image_src instanceof File && selectedProjectId) {
+            const file = values.image_src;
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            
+            if (!allowedTypes.includes(file.type)) {
+              toast.error("Image must be JPG, PNG, WEBP, or GIF.");
+              return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+              toast.error("Image must be smaller than 5MB.");
+              return;
+            }
+
+            const fileExt = file.name.split(".").pop();
+            const fileName = `${crypto.randomUUID()}.${fileExt}`;
+            const filePath = `projects/${user.id}/${selectedProjectId}/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage.from("project-images").upload(filePath, file);
+            
+            if (uploadError) {
+              console.error("Upload error:", uploadError);
+              toast.error(`Image upload failed: ${uploadError.message}`);
+              return;
+            }
+            
+            const { data: { publicUrl } } = supabase.storage.from("project-images").getPublicUrl(filePath);
+            finalImageSrc = publicUrl;
+          }
+
           const { error } = await supabase 
           .from("projects") 
           .update({
@@ -301,7 +359,7 @@ function handleDelete(project: Project) {
           description:values.description,
           status: values.status,
           tech_stack: makeArray(values.tech_stack ?? ""),
-          image_src: values.image_src,
+          image_src: finalImageSrc,
          due_date: values.due_date
   ? format(values.due_date, "yyyy-MM-dd")
   : null,})
@@ -415,7 +473,7 @@ function handleDelete(project: Project) {
                                 <FormField
                                  control={projectForm.control}
                                  name="image_src"
-                                 render={({  field: { onChange, ...fieldProps } }) => (
+                                 render={({  field: { onChange, value, ...fieldProps } }) => (
                                <FormItem>
                               <FormLabel>Icon</FormLabel>
                               <FormControl>
@@ -718,7 +776,7 @@ function handleDelete(project: Project) {
                                 <FormField
                                  control={editProjectForm.control}
                                  name="image_src"
-                                 render={({  field: { onChange, ...fieldProps } }) => (
+                                 render={({  field: { onChange, value, ...fieldProps } }) => (
                                <FormItem>
                               <FormLabel>Icon</FormLabel>
                               <FormControl>

@@ -63,12 +63,47 @@ type ActivityItem = {
   date: Date
 }
 
+  export function getFirstName(name: string) {
+   return name.split(" ")[0];
+}
+
 export default function DashboardPage() {
   const [projects, setProjects] = useState<DBProject[]>([])
   const [tasks, setTasks] = useState<DBTask[]>([])
   const [applications, setApplications] = useState<DBApplication[]>([])
   const [loading, setLoading] = useState(true)
+  const [fullname, setFullname] = useState("")
+  useEffect(() => {
+  async function loadProfile() {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr) {
+      console.error("Auth error:", authErr);
+      return;
+    }
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile fetch error:", error);
+      return;
+    }
+
   
+    setFullname(data?.full_name || "");
+  }
+
+  loadProfile();
+}, []);
   useEffect(() => {
     async function fetchData() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -182,13 +217,47 @@ export default function DashboardPage() {
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>
   }
+ const hour = new Date().getHours()
+
+let greeting = "Good evening"
+  if (hour < 12) {
+    greeting = "Good morning"
+  } else if (hour < 18) {
+    greeting = "Good afternoon"
+  } else {
+    greeting = "Good evening"
+  }
+
+
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
-      
+ 
+      {/*Greeting */}
+      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
+        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-4">
+          <CardHeader className="p-0">
+            <CardTitle>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+                {greeting}, <span className="text-purple-600 dark:text-purple-400 bg-clip-text">{getFirstName(fullname)}</span>.
+              </h1>
+            </CardTitle>
+            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
+              Here is your Workspace Overview.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 flex-shrink-0">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" asChild>
+              <Link href={"/aly"}>
+                <SparklesIcon className="mr-2 h-5 w-5 text-orange-300" /> Ask Alymera
+              </Link>
+            </Button>
+          </CardContent>
+        </div>
+      </Card>
       {/* BUILD STATS */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold tracking-tight">Build Overview</h2>
+       
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {buildStats.map((stat) => (
              <Card key={stat.label} className="bg-card border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 rounded-2xl">
