@@ -7,9 +7,7 @@ const Scene = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
+      <div className="h-full w-full rounded-2xl bg-primary/10 animate-pulse" />
     ),
   }
 )
