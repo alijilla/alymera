@@ -1,5 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
+import Hero3D from "@/components/hero/TestScene"
 export default function LandingPage() {
  const router = useRouter()
 
@@ -10,17 +11,27 @@ export default function LandingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-background">
       
+      <div className="flex flex-row items-center m-auto gap-4 px-4">
+
+     
       {/* A themed card using your custom colors */}
-      <div className="p-8 border rounded-xl bg-card border-border shadow-lg">
+      <div className="p-8 border rounded-xl bg-card border-border shadow-lg flex flex-col items-center">
         
         {/* Main text using 'foreground' */}
-        <h1 className="text-4xl font-bold text-foreground">
-          Welcome to <span className="text-primary">ALYMERA</span>
-        </h1>
+       
+         <div className="text-5xl font-black tracking-widest">
+           <h1>ALY<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-400">MERA</span></h1>
+              
+           </div>
         
         {/* Subtitle using 'muted-foreground' */}
-        <p className="mt-4 text-xl text-muted-foreground">
-          A techy, purple-themed platform.
+        <h2 className="mt-4 text-3xl text-foreground">
+         Build. Apply. Become
+        </h2>
+
+       {/* Subtitle using 'muted-foreground' */}
+        <p className="mt-4 text-2xl text-muted-foreground">
+         AI-powered workspace designed for developers and graduating students who manage both software projects and job applications
         </p>
         
         <div className="flex gap-4 mt-8">
@@ -29,13 +40,15 @@ export default function LandingPage() {
             Get Started
           </button>
           
-          {/* A secondary button using the 'secondary' background */}
-          <button className="px-6 py-2 rounded-md bg-secondary text-secondary-foreground font-medium hover:opacity-90">
-            Learn More
-          </button>
         </div>
 
+
       </div>
+        
+        <div className="px-4 border rounded-xl items-center bg-primary/20 w-[400px] h-[400px]">
+          <Hero3D />
+        </div>
+       </div>
     </main>
   );
 }
