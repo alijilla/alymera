@@ -9,154 +9,132 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Trash2, Edit, Plus, Send } from 'lucide-react';
-import { mockApplications } from '@/lib/mocks/career';
 import { supabase } from "@/lib/supabase/client"
-import { profile } from "console";
-import { Project } from "next/dist/build/swc/types";
 
+type DBApplication = {
+  id: string;
+  user_id?: string;
+  position: string;
+  company: string | null;
+  location: string | null;
+  status: string;
+  date_applied: string | null;
+  job_description?: string | null;
+  created_at?: string;
+}
 
-
-
-type Profile = [{
-  id: string
-  name: string
-}]
 export default function ApplicationsPage() {
-  const [apps, setApps] = useState(mockApplications);
-  const [loading, setLoading] = useState(false);
+  const [apps, setApps] = useState<DBApplication[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [editApp, setEditApp] = useState<typeof mockApplications[number] | null>(null);
+  const [editApp, setEditApp] = useState<DBApplication | null>(null);
   
   const [showDelete, setShowDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadApps() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('applications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (data && !error) {
+          setApps(data as DBApplication[]);
+        } else if (error) {
+          console.error("Fetch applications error:", error.message);
+        }
+      }
+      setLoading(false);
+    }
+    loadApps();
+  }, []);
 
   const resetForm = () => {
     setEditApp(null);
     setShowEdit(false);
     setShowCreate(false);
   };
-  
-
- 
-
-
-
-  const [editingAppId, setEditingAppId] = useState<string | null>(null);
-  
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault(); 
     const target = e.target as typeof e.target & {
-      id: { value: string };
-      position: { value: string };
+      title: { value: string };
       company: { value: string };
       location: { value: string };
       status: { value: string };
-      job_description: { value: string}
-
     };
    
-  const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-        if (userError) {
-      console.log("User error:", userError)
-      return
+    if (userError || !user) {
+      console.error("User error or no user logged in");
+      return;
     }
 
-    if (!user) {
-      console.log("No user is logged in")
-      return
+    const applicationData = {
+      user_id: user.id,
+      company: target.company.value,
+      location: target.location.value,
+      position: target.title.value,
+      date_applied: editApp?.date_applied || new Date().toISOString().split("T")[0],
+      status: target.status.value,
+    };
+
+    if (showEdit && editApp) {
+      const { data, error } = await supabase
+        .from("applications")
+        .update(applicationData)
+        .eq("id", editApp.id)
+        .select();
+
+      if (error) {
+        console.error("Update error:", error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setApps((prev) =>
+          prev.map((application) =>
+            application.id === editApp.id ? data[0] : application
+          )
+        );
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("applications")
+        .insert(applicationData)
+        .select();
+
+      if (error) {
+        console.error("Insert error:", error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setApps((prev) => [data[0], ...prev]);
+      }
     }
 
-  
-  const applicationData = {
-  user_id: user.id,
-  company: target.company.value,
-  location: target.location.value,
-  position: target.position.value,
-  date_applied: new Date().toISOString().split("T")[0],
-  status: target.status.value as
-    | "Saved"
-    | "Applied"
-    | "Interview"
-    | "Offer"
-    | "Rejected"
-    | "Ghosted",
-  job_description: target.job_description.value,
-}
-
-if (showEdit && editApp) {
-  const { data, error } = await supabase
-    .from("applications")
-    .update(applicationData)
-    .eq("id", editingAppId)
-    .select()
-    .single()
-
-  if (error) {
-    console.log("Update error:", error)
-    return
-  }
-
-  setApps((prev) =>
-    prev.map((application) =>
-      application.id === editingAppId ? data : application
-    )
-  )
-
-  setEditingAppId(null)
-} else {
-  const { data, error } = await supabase
-    .from("applications")
-    .insert(applicationData)
-    .select()
-    .single()
-
-  if (error) {
-    console.log("Insert error:", error)
-    return
-  }
-
-  setApps((prev) => [data, ...prev])
-}
-
-resetForm()
-
-}
-
+    resetForm();
+  };
 
   const handleDelete = async () => {
-
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-        if (userError) {
-      console.log("User error:", userError)
-      return
-    }
-
-    if (!user) {
-      console.log("No user is logged in")
-      return
-    }
-
     if (deleteId) {
-      const {error} = await supabase 
-      .from("applications")
-      .delete()
-      .eq("id", deleteId)
+      const { error } = await supabase 
+        .from("applications")
+        .delete()
+        .eq("id", deleteId);
+        
       if (error) {
-      console.log("Delete error:", error)
-      return
-    }
+        console.error("Delete error:", error.message);
+        return;
+      }
       setApps((prev) => prev.filter((a) => a.id !== deleteId));
     }
     setShowDelete(false);
@@ -171,8 +149,6 @@ resetForm()
     );
   }
 
-
-  
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
@@ -228,7 +204,7 @@ resetForm()
                 <TableBody>
                   {apps.map((app) => (
                     <TableRow key={app.id} className="group hover:bg-muted/20 transition-colors">
-                      <TableCell className="font-medium text-foreground">{app.title}</TableCell>
+                      <TableCell className="font-medium text-foreground">{app.position}</TableCell>
                       <TableCell className="text-muted-foreground font-medium">{app.company}</TableCell>
                       <TableCell className="text-muted-foreground">{app.location || "—"}</TableCell>
                       <TableCell>
@@ -236,7 +212,7 @@ resetForm()
                           {app.status}
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{app.appliedDate}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{app.date_applied ? new Date(app.date_applied).toLocaleDateString() : "—"}</TableCell>
                       <TableCell className="text-right pr-4 space-x-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setEditApp(app); setShowEdit(true); }}>
                           <Edit size={16} />
@@ -263,16 +239,16 @@ resetForm()
           <form onSubmit={handleSave} className="grid gap-4 py-4">
             <div className="space-y-2">
               <label htmlFor="title" className="text-sm font-medium">Job Title</label>
-              <Input id="title" name="title" defaultValue={editApp?.title} placeholder="e.g. Frontend Developer" required className="rounded-lg bg-muted/20" />
+              <Input id="title" name="title" defaultValue={editApp?.position} placeholder="e.g. Frontend Developer" required className="rounded-lg bg-muted/20" />
             </div>
             <div className="space-y-2">
               <label htmlFor="company" className="text-sm font-medium">Company</label>
-              <Input id="company" name="company" defaultValue={editApp?.company} placeholder="e.g. Tech Corp" required className="rounded-lg bg-muted/20" />
+              <Input id="company" name="company" defaultValue={editApp?.company || ''} placeholder="e.g. Tech Corp" required className="rounded-lg bg-muted/20" />
             </div>
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
                  <label htmlFor="location" className="text-sm font-medium">Location</label>
-                 <Input id="location" name="location" defaultValue={editApp?.location} placeholder="e.g. Remote" className="rounded-lg bg-muted/20" />
+                 <Input id="location" name="location" defaultValue={editApp?.location || ''} placeholder="e.g. Remote" className="rounded-lg bg-muted/20" />
                </div>
                <div className="space-y-2">
                  <label htmlFor="status" className="text-sm font-medium">Status</label>
@@ -305,7 +281,7 @@ resetForm()
             <Trash2 className="h-6 w-6 text-destructive" />
           </div>
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">Delete Application?</DialogTitle>
+             <DialogTitle className="text-center text-xl">Delete Application?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground font-medium mb-6">
             Are you sure you want to delete this application? This action cannot be undone.

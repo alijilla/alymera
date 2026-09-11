@@ -1,16 +1,55 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { mockApplications } from '@/lib/mocks/career';
 import { Send, CalendarCheck, BadgeCheck, XCircle, ArrowRight, BriefcaseBusiness } from 'lucide-react';
+import { supabase } from "@/lib/supabase/client";
+
+// --- Type Definition ---
+type Application = {
+  id: string;
+  position: string;
+  company: string | null;
+  status: string;
+  date_applied: string | null;
+  created_at: string;
+};
 
 export default function CareerOverview() {
-  const total = mockApplications.length;
-  const interviews = mockApplications.filter((a) => a.status === 'Interview').length;
-  const offers = mockApplications.filter((a) => a.status === 'Offer').length;
-  const rejected = mockApplications.filter((a) => a.status === 'Rejected' || a.status === 'Ghosted').length;
+  const [loading, setLoading] = useState(true);
+  const [applications, setApplications] = useState<Application[]>([]);
 
-  const recent = mockApplications.slice(0, 4);
+  useEffect(() => {
+    async function loadStats() {
+      setLoading(true);
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr) console.error("Auth error:", authErr);
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Applications fetch error:", error.message, error.details, error.hint);
+      } else if (data) {
+        setApplications(data as Application[]);
+      }
+      setLoading(false);
+    }
+    loadStats();
+  }, []);
+
+  const total = applications.length;
+  const interviews = applications.filter(a => a.status === 'Interview').length;
+  const offers = applications.filter(a => a.status === 'Offer').length;
+  const rejected = applications.filter(a => a.status === 'Rejected' || a.status === 'Ghosted').length;
+
+  const recent = applications.slice(0, 4);
 
   const stats = [
     { label: "Total Applications", value: total, icon: <Send className="w-5 h-5 text-blue-500" /> },
@@ -57,7 +96,11 @@ export default function CareerOverview() {
              </div>
            </CardHeader>
            <CardContent className="px-5 pb-5 pt-0">
-             <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
+             {loading ? (
+                <div className="h-8 w-12 bg-muted/50 rounded animate-pulse" />
+             ) : (
+                <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
+             )}
            </CardContent>
          </Card>
         ))}
@@ -73,7 +116,13 @@ export default function CareerOverview() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 flex-1 px-4 md:px-6">
-            {recent.length === 0 ? (
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 bg-muted/30 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : recent.length === 0 ? (
                <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full bg-muted/10">
                  <Send className="w-8 h-8 text-muted-foreground/50 mb-2" />
                  <p className="text-sm font-medium text-foreground">No applications yet</p>
@@ -83,11 +132,11 @@ export default function CareerOverview() {
               recent.map((app) => (
                 <div key={app.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50 hover:bg-muted/40 transition-colors">
                   <div>
-                    <h3 className="font-semibold text-foreground">{app.title}</h3>
-                    <p className="text-sm font-medium text-muted-foreground">{app.company}</p>
+                    <h3 className="font-semibold text-foreground">{app.position}</h3>
+                    <p className="text-sm font-medium text-muted-foreground">{app.company || "Unknown Company"}</p>
                     <p className="text-xs font-medium text-muted-foreground mt-1 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-primary/50" />
-                      Applied · {app.appliedDate}
+                      Applied • {app.date_applied ? new Date(app.date_applied).toLocaleDateString() : "Date unknown"}
                     </p>
                   </div>
                   <div className="flex-shrink-0">

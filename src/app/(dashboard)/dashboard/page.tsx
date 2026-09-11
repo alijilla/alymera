@@ -11,23 +11,21 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card"
-
-
-
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Calendar, SparklesIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   FolderKanban,
   CircleCheck,
   Send,
-  UserRoundCheck,
-
   ArrowRight,
   CalendarCheck,
   BadgeCheck,
+  XCircle,
+  BriefcaseBusiness,
+  CheckCircle2,
+  ListTodo
 } from "lucide-react"
 
 type DBProject = {
@@ -36,6 +34,7 @@ type DBProject = {
   description: string
   status: string
   due_date: string | null
+  created_at: string
 }
 
 type DBTask = {
@@ -44,35 +43,59 @@ type DBTask = {
   name: string
   status: string
   due_date: string | null
+  created_at: string
+}
+
+type DBApplication = {
+  id: string
+  position: string
+  company: string | null
+  status: string
+  date_applied: string | null
+  created_at: string
+}
+
+type ActivityItem = {
+  id: string
+  type: 'project' | 'task' | 'application'
+  title: string
+  description: string
+  date: Date
 }
 
 export default function DashboardPage() {
-  const hour = new Date().getHours()
-
   const [projects, setProjects] = useState<DBProject[]>([])
   const [tasks, setTasks] = useState<DBTask[]>([])
+  const [applications, setApplications] = useState<DBApplication[]>([])
+  const [loading, setLoading] = useState(true)
   
   useEffect(() => {
     async function fetchData() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: projectsData } = await supabase.from("projects").select("*")
+      const { data: projectsData } = await supabase.from("projects").select("*").eq('user_id', user.id)
       if (projectsData) setProjects(projectsData)
 
-      const { data: tasksData } = await supabase.from("tasks").select("*")
-      if (tasksData) setTasks(tasksData)
+      // Fetch tasks that belong to the user's projects
+      if (projectsData && projectsData.length > 0) {
+        const projectIds = projectsData.map(p => p.id)
+        const { data: tasksData } = await supabase.from("tasks").select("*").in('project_id', projectIds)
+        if (tasksData) setTasks(tasksData)
+      }
+
+      const { data: appsData } = await supabase.from("applications").select("*").eq('user_id', user.id).order('created_at', { ascending: false })
+      if (appsData) setApplications(appsData)
+
+      setLoading(false)
     }
     fetchData()
 
     const channel = supabase
       .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        fetchData()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchData()
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => fetchData())
       .subscribe()
 
     return () => {
@@ -80,11 +103,41 @@ export default function DashboardPage() {
     }
   }, [])
 
+  const activeProjects = projects.filter(p => p.status === "In Progress" || p.status === "Planning").length
   const totalProjects = projects.length
+  
+  const now = new Date()
+  const tasksDueSoon = tasks.filter(t => {
+    if (t.status === "Done") return false
+    if (!t.due_date) return false
+    const due = new Date(t.due_date)
+    const diffTime = due.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays >= 0 && diffDays <= 7 // Due within 7 days
+  }).length
+  
   const completedTasks = tasks.filter((t) => t.status === "Done").length
 
- 
-   
+  // Build Overview Stats
+  const buildStats = [
+    { label: "Active Projects", value: activeProjects, icon: <FolderKanban className="w-5 h-5 text-blue-500" /> },
+    { label: "Tasks Due Soon", value: tasksDueSoon, icon: <ListTodo className="w-5 h-5 text-orange-500" /> },
+    { label: "Completed Tasks", value: completedTasks, icon: <CheckCircle2 className="w-5 h-5 text-green-500" /> },
+    { label: "Total Projects", value: totalProjects, icon: <BriefcaseBusiness className="w-5 h-5 text-purple-500" /> },
+  ]
+
+  // Career Stats
+  const appTotal = applications.length
+  const appInterviews = applications.filter(a => a.status === 'Interview').length
+  const appOffers = applications.filter(a => a.status === 'Offer').length
+  const appRejectedGhosted = applications.filter(a => a.status === 'Rejected' || a.status === 'Ghosted').length
+
+  const careerStats = [
+    { label: "Applications", value: appTotal, icon: <Send className="w-5 h-5 text-blue-500" /> },
+    { label: "Interviews", value: appInterviews, icon: <CalendarCheck className="w-5 h-5 text-orange-500" /> },
+    { label: "Offers", value: appOffers, icon: <BadgeCheck className="w-5 h-5 text-green-500" /> },
+    { label: "Rejected / Ghosted", value: appRejectedGhosted, icon: <XCircle className="w-5 h-5 text-muted-foreground" /> },
+  ]
   
   // Find first active project
   const firstActiveProject = projects.find(p => p.status === "In Progress" || p.status === "Planning") || projects[0]
@@ -92,73 +145,93 @@ export default function DashboardPage() {
   const projectCompletedTasks = projectTasks.filter(t => t.status === "Done").length
   const projectPercentage = projectTasks.length > 0 ? Math.round((projectCompletedTasks / projectTasks.length) * 100) : 0
 
-  // Replace mock with real data
   const upcomingTasks = tasks
     .filter(t => t.status !== "Done")
     .sort((a, b) => new Date(a.due_date || "9999-12-31").getTime() - new Date(b.due_date || "9999-12-31").getTime())
     .slice(0, 4)
 
-  
-  let greeting = "Good evening"
-  if (hour < 12) {
-    greeting = "Good morning"
-  } else if (hour < 18) {
-    greeting = "Good afternoon"
-  } else {
-    greeting = "Good evening"
+  const recentApps = applications.slice(0, 3)
+
+  // Generate Recent Activity Stream
+  const activityStream: ActivityItem[] = [
+    ...projects.map(p => ({
+      id: `p-${p.id}`,
+      type: 'project' as const,
+      title: `Created Project: ${p.name}`,
+      description: `Status: ${p.status}`,
+      date: new Date(p.created_at)
+    })),
+    ...tasks.map(t => ({
+      id: `t-${t.id}`,
+      type: 'task' as const,
+      title: `Task Added: ${t.name}`,
+      description: `Status: ${t.status}`,
+      date: new Date(t.created_at)
+    })),
+    ...applications.map(a => ({
+      id: `a-${a.id}`,
+      type: 'application' as const,
+      title: `Applied to ${a.company || 'Unknown Company'}`,
+      description: `Position: ${a.position} - Status: ${a.status}`,
+      date: new Date(a.created_at)
+    }))
+  ]
+  .sort((a, b) => b.date.getTime() - a.date.getTime())
+  .slice(0, 5)
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      {/*Greeting */}
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-4">
-          <CardHeader className="p-0">
-            <CardTitle>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {greeting}, <span className="text-purple-600 dark:text-purple-400 bg-clip-text">Alyssa</span>.
-              </h1>
-            </CardTitle>
-            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Here is your Workspace Overview.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 flex-shrink-0">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" asChild>
-              <Link href={"/aly"}>
-                <SparklesIcon className="mr-2 h-5 w-5 text-orange-300" /> Ask Alymera
-              </Link>
-            </Button>
-          </CardContent>
-        </div>
-      </Card>
-
-      {/*Stats */}
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       
+      {/* BUILD STATS */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold tracking-tight">Build Overview</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {buildStats.map((stat) => (
+             <Card key={stat.label} className="bg-card border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 rounded-2xl">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
+               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                 {stat.label}
+               </CardTitle>
+               <div className="p-2 bg-muted/50 rounded-xl">
+                 {stat.icon}
+               </div>
+             </CardHeader>
+             <CardContent className="px-5 pb-5 pt-0">
+               <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
+             </CardContent>
+           </Card>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Active Project */}
+        {/* Active Project Card */}
         <Card className="bg-card shadow-sm flex flex-col border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {firstActiveProject ? "Active Project" : "No Active Project"}
-            </CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight">Active Project</CardTitle>
+            <CardDescription className="text-sm font-medium text-muted-foreground">
+              Your primary focus right now
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 flex-1">
+          <CardContent className="space-y-4 flex-1 px-4 md:px-6">
             {firstActiveProject ? (
               <>
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30">
-                  <Avatar className="size-[40px] flex-shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">{firstActiveProject.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-muted/30 rounded-xl border border-border/40 group-hover:border-primary/30 transition-colors">
+                    <FolderKanban className="w-6 h-6 text-primary" />
+                  </div>
                   <div>
-                    <h2 className="font-semibold text-lg">{firstActiveProject.name}</h2>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{firstActiveProject.description}</p>
+                    <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{firstActiveProject.name}</h3>
+                    <p className="text-sm font-medium text-muted-foreground line-clamp-1">{firstActiveProject.description || "No description provided."}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 p-2">
-                  <div className="flex items-center justify-between text-sm">
+                <div className="space-y-2 mt-6">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground font-medium">Progress</span>
                     <span className="font-bold text-primary">{projectPercentage}%</span>
                   </div>
@@ -179,7 +252,7 @@ export default function DashboardPage() {
             {firstActiveProject?.due_date && (
             <div className="flex items-center text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-3 py-1.5 rounded-full">
               <Calendar className="w-3.5 h-3.5 mr-2 text-primary" />
-              {firstActiveProject.due_date}
+              {new Date(firstActiveProject.due_date).toLocaleDateString()}
             </div>
             )}
           </CardFooter>
@@ -203,7 +276,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 border-b border-dashed border-muted-foreground/20 mx-2" />
                 <span className="text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-2.5 py-1 rounded-md group-hover:border-primary/30 transition-colors">
-                  {t.due_date || "No date"}
+                  {t.due_date ? new Date(t.due_date).toLocaleDateString() : "No date"}
                 </span>
               </div>
             )) : (
@@ -228,11 +301,28 @@ export default function DashboardPage() {
               Recent Activity
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 flex-1 px-4 md:px-6">
-           
+          <CardContent className="space-y-4 flex-1 px-4 md:px-6 overflow-y-auto">
+            {activityStream.length > 0 ? activityStream.map((activity) => (
+              <div key={activity.id} className="flex items-start gap-4">
+                <div className="mt-1 p-2 bg-muted/30 rounded-lg">
+                  {activity.type === 'project' && <FolderKanban className="w-4 h-4 text-purple-500" />}
+                  {activity.type === 'task' && <ListTodo className="w-4 h-4 text-orange-500" />}
+                  {activity.type === 'application' && <Send className="w-4 h-4 text-blue-500" />}
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">{activity.title}</h4>
+                  <p className="text-xs text-muted-foreground">{activity.description}</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">{activity.date.toLocaleDateString()} {activity.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+            )) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full">
+                <p className="text-sm font-medium text-muted-foreground">No recent activity</p>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl">
-            <Link href="/build/kanban" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
+            <Link href="/dashboard" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
               View all activity <ArrowRight className="ml-2 w-4 h-4" />
             </Link>
           </CardFooter>
@@ -244,8 +334,16 @@ export default function DashboardPage() {
             <CardTitle className="text-xl font-bold tracking-tight">Career Snapshot</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 px-4 md:px-6">
-            <div className="grid grid-cols-3 gap-3">
-             
+            <div className="grid grid-cols-2 gap-3">
+              {careerStats.map((stat) => (
+                <div key={stat.label} className="p-3 bg-muted/20 border border-border/40 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {stat.icon}
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">{stat.label}</span>
+                  </div>
+                  <span className="font-bold text-lg">{stat.value}</span>
+                </div>
+              ))}
             </div>
 
             {/* Recent Applications */}
@@ -258,18 +356,16 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-2">
-                {[
-                  { role: "Frontend Developer", status: "Interview" },
-                  { role: "Junior Developer", status: "Applied" },
-                  { role: "Web Developer", status: "Ghosted" },
-                ].map((app, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
-                    <span className="text-sm font-medium">{app.role}</span>
+                {recentApps.length > 0 ? recentApps.map((app) => (
+                  <div key={app.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                    <span className="text-sm font-medium">{app.position}</span>
                     <span className="text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-2.5 py-1 rounded-md">
                       {app.status}
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-xl border-border/50">No applications yet</p>
+                )}
               </div>
 
               <div className="mt-4 flex justify-end">
@@ -288,10 +384,10 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <SparklesIcon className="h-6 w-6 text-orange-400" />
-              Alymera AI Insight
+              Alymera AI
             </h2>
             <p className="text-muted-foreground font-medium">
-              Your profile is strong for frontend roles, but consider adding more full-stack projects to stand out.
+              AI Insight coming soon. Connect your Resume and track more applications to let Alymera AI suggest your next career move.
             </p>
           </div>
           <Button className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" asChild>

@@ -1,4 +1,6 @@
+"use client"
 import Link from "next/link"
+import {useState, useEffect} from "react"
 import { Header } from "@/components/layout/header"
 import { LogOut, UserRoundCheck } from "lucide-react";
 import {
@@ -42,7 +44,7 @@ import {
   Settings,
 } from "lucide-react";
 import { Profile } from "@/types/profile"
-
+import { supabase } from "@/lib/supabase/client"
 
 export function getInitials(name: string) {
   return name
@@ -72,6 +74,7 @@ export function SidebarLayout({
   parts: NavItem[];
  };
 
+ const [avatarUrl, setAvatarUrl] = useState("")
  const navlist: NavCategory[] = [
   {
     category: "WORKSPACE",
@@ -129,12 +132,40 @@ export function SidebarLayout({
     ],
   },
 ];
+ const [fullname, setFullname] = useState("")
+useEffect(() => {
+  async function loadProfile() {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
 
-      const profile: Profile ={
-        name:"Alyssa Jade Merjilla",
-        role:"Frontend AI Engineer",
-        imageSrc:"/img/icon.png"
-      }
+    if (authErr) {
+      console.error("Auth error:", authErr);
+      return;
+    }
+
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile fetch error:", error);
+      return;
+    }
+
+    setAvatarUrl(data?.avatar_url || "");
+    setFullname(data?.full_name || "");
+   
+  }
+
+  loadProfile();
+}, []);
+
   return (
 <SidebarProvider>
       <Sidebar className="bg-card border-r border-border/50 text-foreground">
@@ -197,7 +228,7 @@ export function SidebarLayout({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="p-4">
-        <SidebarUserInfo profile={profile} />
+        <SidebarUserInfo />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
@@ -217,9 +248,9 @@ export function SidebarLayout({
           <div className="flex items-center gap-2 px-3">
          <Avatar className="size-[36px] flex-shrink-0 cursor-pointer shadow-sm border border-border/50 hover:opacity-90 transition-opacity">
             <AvatarImage 
-            src={profile.imageSrc}
+            src={avatarUrl}
             className="w-full h-full object-cover" />
-            <AvatarFallback className="font-bold text-primary bg-primary/10">{getInitials(profile.name)}</AvatarFallback>
+            <AvatarFallback className="font-bold text-primary bg-primary/10">{getInitials(fullname)}</AvatarFallback>
           </Avatar>
           </div>    
         </header>

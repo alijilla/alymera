@@ -1,15 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { AlertCircle, Trash2, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Settings, AlertCircle, Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: 'error', text: "Passwords do not match." });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMessage({ type: 'error', text: "Password must be at least 6 characters." });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordMessage(null);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      console.error("Update password error:", error.message);
+      setPasswordMessage({ type: 'error', text: error.message });
+    } else {
+      setPasswordMessage({ type: 'success', text: "Password updated successfully!" });
+      setTimeout(() => {
+        setPasswordOpen(false);
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordMessage(null);
+      }, 2000);
+    }
+    setPasswordLoading(false);
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
@@ -31,11 +71,10 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          
+        <div className="space-y-6">
           {/* Account Section */}
           <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
             <CardHeader className="pb-4">
@@ -43,7 +82,7 @@ export default function SettingsPage() {
               <CardDescription className="font-medium mt-1">Update your password to keep your account secure.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <Dialog>
+              <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
                 <DialogTrigger asChild>
                   <Button className="rounded-xl">Update Password</Button>
                 </DialogTrigger>
@@ -53,78 +92,47 @@ export default function SettingsPage() {
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Current Password</Label>
-                      <Input id="currentPassword" type="password" placeholder="••••••••" className="rounded-lg" />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="newPassword">New Password</Label>
-                      <Input id="newPassword" type="password" placeholder="••••••••" className="rounded-lg" />
+                      <Input 
+                        id="newPassword" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="rounded-lg" 
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input id="confirmPassword" type="password" placeholder="••••••••" className="rounded-lg" />
+                      <Input 
+                        id="confirmPassword" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="rounded-lg" 
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                      />
                     </div>
+                    {passwordMessage && (
+                      <p className={`text-sm ${passwordMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                        {passwordMessage.text}
+                      </p>
+                    )}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" className="rounded-xl">Cancel</Button>
-                    <Button className="rounded-xl">Save Password</Button>
+                    <Button variant="outline" className="rounded-xl" onClick={() => setPasswordOpen(false)}>Cancel</Button>
+                    <Button className="rounded-xl" onClick={handleUpdatePassword} disabled={passwordLoading}>
+                      {passwordLoading ? "Saving..." : "Save Password"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </CardContent>
           </Card>
-
-          {/* Notifications Section */}
-          <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold tracking-tight">Notifications</CardTitle>
-              <CardDescription className="font-medium mt-1">Choose what updates you want to receive.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-muted/10">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-bold">Email Notifications</Label>
-                  <p className="text-sm font-medium text-muted-foreground">Receive weekly job matches and application updates.</p>
-                </div>
-                <Switch defaultChecked className="data-[state=checked]:bg-primary" />
-              </div>
-              <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-muted/10">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-bold">Application Reminders</Label>
-                  <p className="text-sm font-medium text-muted-foreground">Get reminded when you have an upcoming interview.</p>
-                </div>
-                <Switch defaultChecked className="data-[state=checked]:bg-primary" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right Column */}
-        <div className="lg:col-span-1 space-y-6">
-          
-          {/* Appearance Section */}
-          <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold tracking-tight">Appearance</CardTitle>
-              <CardDescription className="font-medium mt-1">Customize your UI.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Theme Preference</Label>
-                <Select defaultValue="system">
-                  <SelectTrigger className="rounded-xl bg-muted/20">
-                    <SelectValue placeholder="Select theme" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="light" className="rounded-lg cursor-pointer">Light Mode</SelectItem>
-                    <SelectItem value="dark" className="rounded-lg cursor-pointer">Dark Mode</SelectItem>
-                    <SelectItem value="system" className="rounded-lg cursor-pointer">System Default</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="space-y-6">
           {/* Danger Zone */}
           <Card className="bg-card border border-destructive/30 shadow-sm rounded-2xl bg-destructive/5">
             <CardHeader className="pb-4">
@@ -148,18 +156,17 @@ export default function SettingsPage() {
                      <Trash2 className="h-6 w-6 text-destructive" />
                    </div>
                    <DialogHeader>
-                     <DialogTitle className="text-center text-xl">Delete Account?</DialogTitle>
+                     <DialogTitle className="text-center text-xl">Delete Account Unavailable</DialogTitle>
                    </DialogHeader>
                    <p className="text-sm text-muted-foreground font-medium mb-6">
-                     Are you sure you want to delete your account? This action is permanent and cannot be undone. All your data will be erased.
+                     Account deletion is currently unavailable as it requires a secure backend endpoint to safely remove auth data.
                    </p>
                    <DialogFooter className="flex w-full sm:justify-center gap-2">
-                     <Button type="button" variant="outline" className="rounded-xl flex-1">
-                       Cancel
-                     </Button>
-                     <Button type="button" variant="destructive" className="rounded-xl flex-1">
-                       Delete Permanently
-                     </Button>
+                     <DialogTrigger asChild>
+                       <Button type="button" variant="outline" className="rounded-xl flex-1">
+                         Close
+                       </Button>
+                     </DialogTrigger>
                    </DialogFooter>
                  </DialogContent>
                </Dialog>
