@@ -4,11 +4,7 @@ import { supabase } from "@/lib/supabase/client"
   type Project = {
     id: string
     name: string
-    description: string
-    image_src: string
-    status: string
-    tech_stack: string[]
-    due_date: string | null
+    
   }
 
 export default function TestProject() {
@@ -34,7 +30,7 @@ export default function TestProject() {
     console.log("Current user:", user.id)
 
     // 2. Create a project belonging to that user
-    const { data, error } = await supabase.from("projects").select("*")
+    const { data, error } = await supabase.from("profiles").select("*")
 
     // 3. Check the result
     if (error) {
@@ -47,8 +43,8 @@ export default function TestProject() {
   }
 
 async function createMile() {
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
+  const { data: profile, error: projectError } = await supabase
+    .from("profiles")
     .select("id")
     .limit(1)
     .single()
@@ -58,69 +54,33 @@ async function createMile() {
     return
   }
 
-  console.log("Project ID:", project.id)
+  console.log("Project ID:", profile.id)
 
   const { data, error } = await supabase
-    .from("tasks")
-    .insert([{
-    project_id: project.id,
-    name: "Build application tracker",
-    status: "In Progress",
-    description: "Track applications through different stages.",
-     due_date: "2026-09-05",
-  },
+    .from("applications")
+    .insert([
+    
   {
-    project_id: project.id,
-    name: "Add application filters",
-    status: "To Do",
-    description: "Filter applications by status and job type.",
-     due_date: "2026-09-08",
+    user_id: profile.id,
+    company: "Concentrix",
+    location: "Makati City, Metro Manila",
+    positon: "CSR",
+    date_applied: "2026-07-06",
+    status: "Rejected",
+    description: "Declined job offer",
+   
   },
-
-  {
-    project_id: project.id,
-    name: "Create job matching UI",
-    status: "To Do",
-    description: "Create the interface for AI job matching.",
-     due_date: "2026-09-11",
+    {
+    user_id: profile.id,
+    company: "pJ lhuilier",
+    location: "Makati City, Metro Manila",
+    positon: "Software Engineer",
+    date_applied: "2026-07-16",
+    status: "Applied",
+    description: "Declined job offer",
+   
   },
-  {
-    project_id: project.id,
-    name: "Analyze job descriptions",
-    status: "Backlog",
-    description: "Prepare job descriptions for AI analysis.",
-     due_date: "2026-09-13",
-  },
-  {
-    project_id: project.id,
-    name: "Generate career insights",
-    status: "Backlog",
-    description: "Generate AI-powered career recommendations.",
-     due_date: "2026-09-15",
-  },
-
-  {
-    project_id: project.id,
-    name: "Run application tests",
-    status: "Backlog",
-    description: "Test the Career Manager features.",
-     due_date: "2026-09-17",
-  },
-  {
-    project_id: project.id,
-    name: "Fix production issues",
-    status: "Backlog",
-    description: "Fix bugs discovered during testing.",
-     due_date: "2026-09-19",
-  },
-  {
-    project_id: project.id,
-    name: "Deploy Career Manager",
-    status: "Backlog",
-    description: "Deploy the application to production.",
-    due_date: "2026-09-20",
-  },
-
+							
 ])
     .select()
 

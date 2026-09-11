@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -10,7 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Trash2, Edit, Plus, Send } from 'lucide-react';
 import { mockApplications } from '@/lib/mocks/career';
+import { supabase } from "@/lib/supabase/client"
+import { profile } from "console";
+import { Project } from "next/dist/build/swc/types";
 
+
+
+
+type Profile = [{
+  id: string
+  name: string
+}]
 export default function ApplicationsPage() {
   const [apps, setApps] = useState(mockApplications);
   const [loading, setLoading] = useState(false);
@@ -27,33 +37,126 @@ export default function ApplicationsPage() {
     setShowEdit(false);
     setShowCreate(false);
   };
+  
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
+ 
+
+
+
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
+  
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault(); 
     const target = e.target as typeof e.target & {
-      title: { value: string };
+      id: { value: string };
+      position: { value: string };
       company: { value: string };
       location: { value: string };
       status: { value: string };
-    };
-    const newApp = {
-      id: Date.now().toString(),
-      title: target.title.value,
-      company: target.company.value,
-      location: target.location.value,
-      status: target.status.value as 'Saved' | 'Applied' | 'Interview' | 'Offer' | 'Rejected' | 'Ghosted',
-      appliedDate: new Date().toISOString().split('T')[0],
-    };
-    if (showEdit && editApp) {
-      setApps((prev) => prev.map((a) => (a.id === editApp.id ? newApp : a)));
-    } else {
-      setApps((prev) => [newApp, ...prev]);
-    }
-    resetForm();
-  };
+      job_description: { value: string}
 
-  const handleDelete = () => {
+    };
+   
+  const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+        if (userError) {
+      console.log("User error:", userError)
+      return
+    }
+
+    if (!user) {
+      console.log("No user is logged in")
+      return
+    }
+
+  
+  const applicationData = {
+  user_id: user.id,
+  company: target.company.value,
+  location: target.location.value,
+  position: target.position.value,
+  date_applied: new Date().toISOString().split("T")[0],
+  status: target.status.value as
+    | "Saved"
+    | "Applied"
+    | "Interview"
+    | "Offer"
+    | "Rejected"
+    | "Ghosted",
+  job_description: target.job_description.value,
+}
+
+if (showEdit && editApp) {
+  const { data, error } = await supabase
+    .from("applications")
+    .update(applicationData)
+    .eq("id", editingAppId)
+    .select()
+    .single()
+
+  if (error) {
+    console.log("Update error:", error)
+    return
+  }
+
+  setApps((prev) =>
+    prev.map((application) =>
+      application.id === editingAppId ? data : application
+    )
+  )
+
+  setEditingAppId(null)
+} else {
+  const { data, error } = await supabase
+    .from("applications")
+    .insert(applicationData)
+    .select()
+    .single()
+
+  if (error) {
+    console.log("Insert error:", error)
+    return
+  }
+
+  setApps((prev) => [data, ...prev])
+}
+
+resetForm()
+
+}
+
+
+  const handleDelete = async () => {
+
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+        if (userError) {
+      console.log("User error:", userError)
+      return
+    }
+
+    if (!user) {
+      console.log("No user is logged in")
+      return
+    }
+
     if (deleteId) {
+      const {error} = await supabase 
+      .from("applications")
+      .delete()
+      .eq("id", deleteId)
+      if (error) {
+      console.log("Delete error:", error)
+      return
+    }
       setApps((prev) => prev.filter((a) => a.id !== deleteId));
     }
     setShowDelete(false);
@@ -68,6 +171,8 @@ export default function ApplicationsPage() {
     );
   }
 
+
+  
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
