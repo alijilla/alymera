@@ -11,6 +11,7 @@ const Scene = dynamic(
     ),
   }
 )
+
 export default function LandingPage() {
   
 
