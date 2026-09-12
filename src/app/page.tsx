@@ -19,6 +19,9 @@ export default function LandingPage() {
   function getStarted() {
     router.push("/login")
   }
+  function getAlydemo(){
+    router.push("/aly-demo")
+  }
 
   return (
     <main className="  relative flex  flex-col min-h-screen md:items-center md:justify-center  p-6 md:p-12 lg:p-24">
@@ -43,17 +46,23 @@ export default function LandingPage() {
             Build. Apply. Become.
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground md:text-xl">
             An AI-powered workspace for developers and graduating students to
             build projects, manage applications, and grow their careers.
           </p>
 
-          <div className="mt-8">
+          <div className="mt-8 gap-10">
             <button
               onClick={getStarted}
               className=" rounded-xl bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               Get Started
+            </button>
+             <button
+              onClick={getAlydemo}
+              className=" ml-5 rounded-xl bg-secondary px-6 py-3 font-medium text-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              Try Alymera AI
             </button>
           </div>
 
