@@ -1,11 +1,17 @@
 import { groq } from "@ai-sdk/groq"
 import {
   convertToModelMessages,
+  generateText,
+  Output,
   stepCountIs,
   streamText,
   type UIMessage,
 } from "ai"
-
+import {
+  interviewSchema,
+  jobMatchSchema,
+  resumeAnalysisSchema,
+} from "@/lib/ai/schemas"
 import {
   getProjects,
   getProjectTasks,
@@ -23,6 +29,9 @@ import {
 
 import { createClient } from "@/lib/supabase/server"
 import { systemPrompts } from "@/lib/ai/prompts"
+
+
+
 
 export const maxDuration = 30
 
@@ -62,15 +71,19 @@ const codingTools = {
   UpdateTask,
 }
   try {
-    const {
-      messages,
-      assistant,
-      demo = false,
-    }: {
-      messages: UIMessage[]
-      assistant: keyof typeof systemPrompts
-      demo?: boolean
-    } = await req.json()
+const {
+  messages,
+  assistant,
+  demo = false,
+  feature,
+  jobDescription,
+}: {
+  messages: UIMessage[]
+  assistant: keyof typeof systemPrompts
+  demo?: boolean
+  feature?: string
+  jobDescription?: string
+} = await req.json()
 
     const selectedPrompt = systemPrompts[assistant]
 
@@ -95,6 +108,106 @@ const codingTools = {
       }
     }
 
+
+  if (assistant === "career" && feature === "interview") {
+  const resumeResult = await getResume.execute(
+    {},
+    {
+      toolCallId: "interview",
+      messages: [],
+      context: {},
+    }
+  )
+
+  const interview = await generateText({
+    model: groq("openai/gpt-oss-120b"),
+
+    system: selectedPrompt,
+
+    prompt: `
+Generate interview preparation based on the user's resume
+and the following job description.
+
+Resume:
+${JSON.stringify(resumeResult)}
+
+Job Description:
+${jobDescription ?? ""}
+`,
+
+    output: Output.object({
+      schema: interviewSchema,
+    }),
+  })
+
+  return Response.json(interview.output)
+}
+   
+if (assistant === "career" && feature === "job-matching") {
+  const resumeResult = await getResume.execute(
+    {},
+    {
+      toolCallId: "job-matching",
+      messages: [],
+      context: {},
+    }
+  )
+
+ const analysis = await generateText({
+  model: groq("openai/gpt-oss-120b"),
+
+  system: selectedPrompt,
+
+  prompt: `
+Compare the user's resume against the following job description.
+
+Resume:
+${JSON.stringify(resumeResult)}
+
+Job Description:
+${jobDescription ?? ""}
+`,
+
+  output: Output.object({
+    schema: jobMatchSchema,
+  }),
+})
+
+return Response.json(analysis.output)
+}
+
+if (assistant === "career" && feature === "resume-analysis") {
+  const resumeResult = await getResume.execute(
+    {},
+    {
+      toolCallId: "resume-analysis",
+      messages: [],
+      context: {},
+    }
+  )
+
+  const analysis = await generateText({
+    model: groq("openai/gpt-oss-120b"),
+
+    system: selectedPrompt,
+
+    prompt: `
+Analyze the following resume and return your analysis.
+
+Resume data:
+${JSON.stringify(resumeResult)}
+`,
+
+    output: Output.object({
+      schema: resumeAnalysisSchema,
+    }),
+  })
+
+console.log("RESUME FOR ANALYSIS:", resumeResult)
+console.log("RESUME ANALYSIS OUTPUT:", analysis.output)
+
+return Response.json(analysis.output)
+}
     const result = streamText({
       model: groq("openai/gpt-oss-120b"),
       system: selectedPrompt,
@@ -107,6 +220,8 @@ const codingTools = {
       : assistant === "coding"
         ? codingTools
         : undefined,
+
+      
       stopWhen: stepCountIs(5),
     })
 

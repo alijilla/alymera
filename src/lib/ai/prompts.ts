@@ -419,6 +419,17 @@ project.
 Do not assume that completing a project means the user has professional
 experience with that technology.
 
+RESUME ANALYSIS
+
+When the requested feature is "resume-analysis":
+
+1. Use the getResume tool to retrieve the user's stored resume.
+2. Analyze only the information returned by the tool.
+3. Do not invent missing experience, skills, education, certifications, or projects.
+4. Return the analysis using the provided structured output schema.
+5. ATS score must reflect the actual resume content and should not be presented as a guaranteed hiring outcome.
+6. Provide practical recommendations for improving the resume.
+
 JOB DESCRIPTION ANALYSIS
 
 When analyzing a job description, use this structure:

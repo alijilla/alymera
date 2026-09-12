@@ -26,24 +26,154 @@ type ChatMessage = {
   content: string;
 };
 
+import type {
+  ResumeAnalysis,
+  JobMatch,
+  Interview,
+} from "@/lib/ai/schemas"
 export function CareerAssistant() {
 
-  const [prompt, setPrompt] = useState("")
+  const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null)
+const [isAnalyzingResume, setIsAnalyzingResume] = useState(false)
+const [resumeAnalysisError, setResumeAnalysisError] = useState<string | null>(null)
 
-  const {
-    messages,
-    sendMessage,
-    status,
-    error,
-    stop,
-  } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/alymera",
-      body: {
-        assistant: "career",
+  const [prompt, setPrompt] = useState("")
+const [jobDescription, setJobDescription] = useState("")
+
+
+const [jobMatch, setJobMatch] = useState<JobMatch | null>(null)
+const [isMatchingJob, setIsMatchingJob] = useState(false)
+const [jobMatchError, setJobMatchError] = useState<string | null>(null)
+
+const [interview, setInterview] = useState<Interview | null>(null)
+const [isGeneratingInterview, setIsGeneratingInterview] = useState(false)
+const [interviewError, setInterviewError] = useState<string | null>(null)
+
+
+
+  const analyzeResume = async () => {
+  setIsAnalyzingResume(true)
+  setResumeAnalysisError(null)
+
+  try {
+    const response = await fetch("/api/alymera", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
-  })
+      body: JSON.stringify({
+        messages: [],
+        assistant: "career",
+        demo: false,
+        feature: "resume-analysis",
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to analyze resume.")
+    }
+
+    const data = await response.json()
+
+    setResumeAnalysis(data)
+  } catch (error) {
+    console.error(error)
+    setResumeAnalysisError(
+      "Unable to analyze your resume. Please try again."
+    )
+  } finally {
+    setIsAnalyzingResume(false)
+  }
+}
+
+const jobMatching = async () => {
+  setIsMatchingJob(true)
+  setJobMatchError(null)
+
+  try {
+    const response = await fetch("/api/alymera", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [],
+        assistant: "career",
+        demo: false,
+        feature: "job-matching",
+        jobDescription,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to match job.")
+    }
+
+    const data = await response.json()
+
+    setJobMatch(data)
+  } catch (error) {
+    console.error(error)
+    setJobMatchError(
+      "Unable to analyze this job description. Please try again."
+    )
+  } finally {
+    setIsMatchingJob(false)
+  }
+}
+
+const interviewing = async () => {
+  setIsGeneratingInterview(true)
+  setInterviewError(null)
+
+  try {
+    const response = await fetch("/api/alymera", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [],
+        assistant: "career",
+        demo: false,
+        feature: "interview",
+        jobDescription,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to generate interview.")
+    }
+
+    const data = await response.json()
+
+    setInterview(data)
+  } catch (error) {
+    console.error(error)
+    setInterviewError(
+      "Unable to generate interview questions. Please try again."
+    )
+  } finally {
+    setIsGeneratingInterview(false)
+  }
+}
+
+
+
+const {
+  messages,
+  sendMessage,
+  status,
+  error,
+  stop,
+} = useChat({
+  transport: new DefaultChatTransport({
+    api: "/api/alymera",
+    body: {
+      assistant: "career",
+    },
+  }),
+})
 
   // Chat status
   const isSubmitted = status === "submitted"
@@ -226,6 +356,255 @@ export function CareerAssistant() {
             </div>
 
           </PromptInput>
+          <div className="space-y-2">
+  <label className="text-sm font-medium">
+    Job Description
+  </label>
+
+  <textarea
+    value={jobDescription}
+    onChange={(e) => setJobDescription(e.target.value)}
+    placeholder="Paste a job description here..."
+    className="min-h-[160px] w-full rounded-lg border bg-background p-3 text-sm"
+  />
+</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+  <Button
+    variant="outline"
+    onClick={analyzeResume}
+    disabled={isAnalyzingResume}
+    className="h-auto flex-col gap-2 py-4"
+  >
+    <FileSearch className="h-5 w-5" />
+    <span>
+      {isAnalyzingResume ? "Analyzing..." : "Analyze Resume"}
+    </span>
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={jobMatching}
+    disabled={isMatchingJob}
+    className="h-auto flex-col gap-2 py-4"
+  >
+    <Map className="h-5 w-5" />
+    <span>
+      {isMatchingJob ? "Matching..." : "Job Matching"}
+    </span>
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={interviewing}
+    disabled={isGeneratingInterview}
+    className="h-auto flex-col gap-2 py-4"
+  >
+    <CheckCircle2 className="h-5 w-5" />
+    <span>
+      {isGeneratingInterview ? "Generating..." : "Interview Prep"}
+    </span>
+  </Button>
+</div>
+
+{resumeAnalysis && (
+  <div className="mt-6 space-y-5 rounded-xl border p-5">
+    <div>
+      <h3 className="text-lg font-semibold">Resume Analysis</h3>
+      <p className="text-sm text-muted-foreground">
+        AI analysis of your stored resume.
+      </p>
+    </div>
+
+    <div className="text-center">
+      <p className="text-sm text-muted-foreground">ATS Score</p>
+      <p className="text-4xl font-bold">
+        {resumeAnalysis.atsScore}/100
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {resumeAnalysis.atsExplanation}
+      </p>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Professional Headline</h4>
+      <p className="text-sm text-muted-foreground">
+        {resumeAnalysis.professionalHeadline}
+      </p>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Professional Summary</h4>
+      <p className="text-sm text-muted-foreground">
+        {resumeAnalysis.professionalSummary}
+      </p>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Strengths</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {resumeAnalysis.strengths.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Weaknesses</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {resumeAnalysis.weaknesses.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Recommendations</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {resumeAnalysis.recommendations.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">
+        Hireability Assessment
+      </h4>
+      <p className="text-sm">
+        {resumeAnalysis.hireabilityAssessment}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {resumeAnalysis.hireabilityExplanation}
+      </p>
+    </div>
+  </div>
+)}
+
+{jobMatch && (
+  <div className="mt-6 space-y-5 rounded-xl border p-5">
+    <div>
+      <h3 className="text-lg font-semibold">Job Match</h3>
+      <p className="text-sm text-muted-foreground">
+        How well your resume matches this job description.
+      </p>
+    </div>
+
+    <div className="text-center">
+      <p className="text-sm text-muted-foreground">
+        Match Score
+      </p>
+      <p className="text-4xl font-bold">
+        {jobMatch.matchScore}/100
+      </p>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Matched Skills</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {jobMatch.matchedSkills.map((skill, index) => (
+          <li key={index}>{skill}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Missing Skills</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {jobMatch.missingSkills.map((skill, index) => (
+          <li key={index}>{skill}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Strengths</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {jobMatch.strengths.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Recommendations</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {jobMatch.recommendations.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Explanation</h4>
+      <p className="text-sm text-muted-foreground">
+        {jobMatch.explanation}
+      </p>
+    </div>
+  </div>
+)}
+
+{interview && (
+  <div className="mt-6 space-y-5 rounded-xl border p-5">
+    <div>
+      <h3 className="text-lg font-semibold">
+        Interview Preparation
+      </h3>
+      <p className="text-sm text-muted-foreground">
+        AI-generated interview questions based on the
+        resume and job description.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="font-medium">Interview Questions</h4>
+
+      {interview.questions.map((item, index) => (
+        <div
+          key={index}
+          className="rounded-lg border p-4"
+        >
+          <p className="font-medium">
+            {index + 1}. {item.question}
+          </p>
+
+          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+            <p>
+              <span className="font-medium">Category:</span>{" "}
+              {item.category}
+            </p>
+
+            <p>
+              <span className="font-medium">Difficulty:</span>{" "}
+              {item.difficulty}
+            </p>
+
+            <p>
+              <span className="font-medium">Focus:</span>{" "}
+              {item.focus}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div>
+      <h4 className="font-medium">Preparation Tips</h4>
+
+      <ul className="list-disc pl-5 text-sm text-muted-foreground">
+        {interview.preparationTips.map((tip, index) => (
+          <li key={index}>{tip}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h4 className="font-medium">Explanation</h4>
+      <p className="text-sm text-muted-foreground">
+        {interview.explanation}
+      </p>
+    </div>
+  </div>
+)}
 
           <div className="text-center mt-2">
             <p className="text-[10px] text-muted-foreground">

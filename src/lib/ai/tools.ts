@@ -514,15 +514,10 @@ return {
 })
 
 
-//Get Resume
-export const getResume = tool({
-  description:
-    
-  "Get the resume belonging to the authenticated ALYMERA user.",
-  inputSchema: z.object({}),
 
-execute: async ({}) => {
-  const supabase = await createClient()
+export async function getResumeData() {
+
+   const supabase = await createClient()
   const {
   data: { user },
 } = await supabase.auth.getUser()
@@ -586,5 +581,16 @@ return {
   skills: skillsRes.data ?? [],
   projects: rpRes.data ?? [],
 }
+}
+
+//Get Resume
+export const getResume = tool({
+  description:
+    
+  "Get the resume belonging to the authenticated ALYMERA user.",
+  inputSchema: z.object({}),
+
+execute: async ({}) => {
+  return getResumeData()
 },
 })

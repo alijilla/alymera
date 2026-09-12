@@ -85,7 +85,10 @@ export function AlymeraAssistant({
 
       <Conversation className="min-h-0 flex-1 bg-gradient-to-b from-background via-background to-muted/20">
 
-        <ConversationContent className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-8">
+       <ConversationContent
+  className={`mx-auto w-full max-w-4xl space-y-6 p-4 md:p-8 ${
+    messages.length === 0 ? "min-h-full justify-end" : ""
+  }`} >
 
 {/* ========================================================= */}
 {/* EMPTY STATE / CHAT */}
@@ -97,7 +100,7 @@ export function AlymeraAssistant({
     /* DEMO EMPTY STATE */
     /* ===================================================== */
 
-    <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+   <div className="flex w-full max-w-3xl flex-col items-center px-4 pb-8 pt-8 text-center">
       <div className="mb-6 rounded-full border border-orange-500/20 bg-orange-500/10 p-4">
         <Sparkles className="h-10 w-10 text-orange-400" />
       </div>
@@ -120,7 +123,7 @@ export function AlymeraAssistant({
     /* NORMAL ALYMERA EMPTY STATE */
     /* ===================================================== */
 
-    <div className="flex h-full w-full max-w-3xl mx-auto flex-col items-center justify-center px-4 py-8 text-center">
+ <div className="mt-auto flex w-full max-w-3xl mx-auto flex-col items-center px-4 pb-8 pt-8 text-center">
 
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 shadow-sm">
         <Sparkles className="h-8 w-8 text-primary" />
