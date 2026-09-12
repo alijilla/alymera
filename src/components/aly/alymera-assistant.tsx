@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import {
   Conversation,
   ConversationContent,
@@ -17,87 +19,42 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sparkles, Calendar, Briefcase, ListTodo, FileSearch, ArrowRight } from "lucide-react";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: React.ReactNode;
-};
+import { Sparkles, Calendar, Briefcase, ListTodo, FileSearch } from "lucide-react";
 
 export function AlymeraAssistant() {
-  const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handlePromptClick = (text: string) => {
-    setPrompt(text);
-  };
-
-  const handleSubmit = () => {
-    if (!prompt.trim()) return;
-
-    const userMessage = prompt;
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
-    setPrompt("");
-    setIsLoading(true);
-
-    // Mock AI response delay
-    setTimeout(() => {
-      setIsLoading(false);
-      let responseContent: React.ReactNode = "I can help with that. Could you provide more details?";
-
-      if (userMessage.includes("task")) {
-        responseContent = (
-          <div className="space-y-4 w-full">
-            <p>I created this task for your project.</p>
-            <Card className="bg-background border border-border/50 shadow-sm w-full max-w-sm rounded-xl">
-              <CardContent className="p-4 flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold text-sm">Implement Authentication</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">To Do</p>
-                </div>
-                <div className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-1 rounded-md flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Sep 12
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-      } else if (userMessage.includes("application") || userMessage.includes("job")) {
-        responseContent = (
-          <div className="space-y-4 w-full">
-            <p>I updated your application status.</p>
-            <Card className="bg-background border border-border/50 shadow-sm w-full max-w-sm rounded-xl">
-              <CardContent className="p-4 flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold text-sm">Frontend Developer</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">Company Name</p>
-                </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                  Interview
-                </span>
-              </CardContent>
-            </Card>
-          </div>
-        );
-      } else if (userMessage.includes("priority")) {
-        responseContent = (
-          <div className="space-y-4 w-full">
-            <p>Based on your upcoming deadlines, here is what you should focus on today:</p>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              <li>Review the design system pull request.</li>
-              <li>Prepare for your Interview with XYZ Corp tomorrow.</li>
-              <li>Complete the Kanban Board UI task.</li>
-            </ul>
-          </div>
-        );
-      }
-
-      setMessages((prev) => [...prev, { role: "assistant", content: responseContent }]);
-    }, 1000);
-  };
-
+  const [prompt, setPrompt] = useState("")
+ 
+   const {
+     messages,
+     sendMessage,
+     status,
+     error,
+     stop,
+   } = useChat({
+     transport: new DefaultChatTransport({
+       api: "/api/alymera",
+       body: {
+         assistant: "coding",
+       },
+     }),
+   })
+ 
+   const isLoading =
+     status === "submitted" || status === "streaming"
+ 
+   const handlePromptClick = (text: string) => {
+     setPrompt(text)
+   }
+ 
+   const handleSubmit = () => {
+     if (!prompt.trim() || isLoading) return
+ 
+     sendMessage({
+       text: prompt.trim(),
+     })
+ 
+     setPrompt("")
+   }
   return (
     <div className="flex h-[600px] md:h-[700px] flex-col rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden transition-all duration-300">
       <Conversation className="min-h-0 flex-1 bg-background/50">
@@ -117,7 +74,7 @@ export function AlymeraAssistant() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                   <Button variant="outline" onClick={() => handlePromptClick("What's my next priority?")} className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left whitespace-normal">
                      <ListTodo className="w-4 h-4 text-primary mr-3 shrink-0" />
-                     <span className="text-sm">What's my next priority?</span>
+                     <span className="text-sm">What&apos;s my next priority?</span>
                   </Button>
                   <Button variant="outline" onClick={() => handlePromptClick("Create a task for my project.")} className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left whitespace-normal">
                      <Calendar className="w-4 h-4 text-green-500 mr-3 shrink-0" />
@@ -136,60 +93,87 @@ export function AlymeraAssistant() {
             </div>
           ) : (
             <div className="space-y-6 pb-4">
-              {messages.map((message, i) => (
-                <Message from={message.role} key={i}>
-                  <MessageContent>
-                    <MessageResponse className="text-sm md:text-base leading-relaxed break-words">
-                      {message.content}
+                       {/* Messages */}
+          {messages.map((message) => (
+            <Message
+              from={message.role}
+              key={message.id}
+            >
+              <MessageContent>
+                {message.parts.map((part, index) =>
+                  part.type === "text" ? (
+                    <MessageResponse key={index}>
+                      {part.text}
                     </MessageResponse>
-                  </MessageContent>
-                </Message>
-              ))}
-              {isLoading && (
-                <Message from="assistant">
-                  <MessageContent>
-                    <MessageResponse>
-                       <div className="flex space-x-2 items-center h-6">
-                        <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce"></div>
-                      </div>
-                    </MessageResponse>
-                  </MessageContent>
-                </Message>
-              )}
+                  ) : null
+                )}
+              </MessageContent>
+            </Message>
+          ))}
+
+          {/* Error */}
+          {error && (
+            <div className="text-sm text-destructive">
+              Sorry, something went wrong. Please try again.
+            </div>
+          )}
             </div>
           )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 
+ 
+      {/* Input */}
       <div className="p-4 bg-card border-t border-border/50">
+
         <div className="max-w-3xl mx-auto w-full">
-          <PromptInput onSubmit={handleSubmit} className="shrink-0 bg-background rounded-2xl border border-border/50 shadow-sm focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all">
+
+          <PromptInput
+            onSubmit={handleSubmit}
+            className="shrink-0 bg-background rounded-2xl border border-border/50 shadow-sm focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all"
+          >
+
             <PromptInputTextarea
               placeholder="Ask Alymera..."
               value={prompt}
               className="min-h-[50px] max-h-[250px] py-3.5 border-0 focus-visible:ring-0 resize-none rounded-2xl"
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit()
                 }
               }}
             />
+
             <div className="flex flex-col justify-end p-2 pb-2 pr-2">
-              <PromptInputSubmit
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
-                disabled={!prompt.trim() || isLoading}
-              >
-              </PromptInputSubmit>
+
+              {isLoading ? (
+                <PromptInputSubmit
+                  type="button"
+                  onClick={stop}
+                  className="rounded-xl bg-destructive text-destructive-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
+                >
+                  ■
+                </PromptInputSubmit>
+              ) : (
+                <PromptInputSubmit
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
+                  disabled={!prompt.trim()}
+                />
+              )}
+
             </div>
+
           </PromptInput>
+
           <div className="text-center mt-2">
-            <p className="text-[10px] text-muted-foreground">Alymera AI can make mistakes. Consider verifying important information.</p>
+            <p className="text-[10px] text-muted-foreground">
+              Alymera AI can make mistakes. Consider verifying important information.
+            </p>
           </div>
+
         </div>
       </div>
     </div>

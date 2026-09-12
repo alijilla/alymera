@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^4.0.41",
+    "@ai-sdk/react": "^4.0.102",
     "@dnd-kit/helpers": "^0.5.0",
     "@dnd-kit/react": "^0.5.0",
     "@hookform/resolvers": "^5.9.1",
@@ -23,7 +25,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.115.0",
     "@xyflow/react": "^12.11.6",
-    "ai": "^7.0.92",
+    "ai": "^7.0.99",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -43,6 +45,7 @@
     "react-hook-form": "^7.87.0",
     "react-icons": "^5.7.0",
     "react-jsx-parser": "^2.4.1",
+    "react-markdown": "^10.1.0",
     "shadcn": "^4.19.1",
     "shiki": "^4.4.3",
     "sonner": "^2.0.8",

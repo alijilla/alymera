@@ -1,5 +1,8 @@
 "use client"
 import { useState } from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
+
 import {
   Conversation,
   ConversationContent,
@@ -24,30 +27,39 @@ type ChatMessage = {
 };
 
 export function CareerAssistant() {
-  const [jobDescription, setJobDescription] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  async function handleSubmit() {
-    if (!jobDescription.trim()) return;
+  const [prompt, setPrompt] = useState("")
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: jobDescription,
-      }
-    ]);
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    stop,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/alymera",
+      body: {
+        assistant: "coding",
+      },
+    }),
+  })
 
-    setJobDescription("");
+  const isLoading =
+    status === "submitted" || status === "streaming"
 
-    // Mock AI Response
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: `**Match Score:** 75%\n\n**Matched Skills:**\n- React\n- Next.js\n- TypeScript\n- Tailwind CSS\n\n**Missing Skills:**\n- GraphQL\n- Jest\n\n**Strengths:**\nYour experience with Next.js and Tailwind matches well with the core responsibilities of this role. You also have the required 3+ years of frontend experience.\n\n**Suggestions:**\nConsider highlighting any testing experience you have (even if not Jest specifically). You might want to brush up on GraphQL concepts before an interview.`,
-      }
-    ]);
+  const handlePromptClick = (text: string) => {
+    setPrompt(text)
+  }
+
+  const handleSubmit = () => {
+    if (!prompt.trim() || isLoading) return
+
+    sendMessage({
+      text: prompt.trim(),
+    })
+
+    setPrompt("")
   }
 
   return (
@@ -74,28 +86,39 @@ export function CareerAssistant() {
               </p>
               
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left">
+                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
+                 onClick={() =>
+                                handlePromptClick("Analyze this job description and give me a match score: ")
+                            }>
                    <FileSearch className="w-5 h-5 text-blue-400 mr-3 shrink-0" />
                    <div>
                      <div className="font-semibold text-sm text-foreground">Analyze a Job</div>
                      <div className="text-xs text-muted-foreground mt-0.5">Paste a description to get a match score</div>
                    </div>
                 </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left">
+                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
+                 onClick={() =>
+                                handlePromptClick("Add this job to my tracker: ")
+                            }>
                    <BookmarkPlus className="w-5 h-5 text-green-500 mr-3 shrink-0" />
                    <div>
                      <div className="font-semibold text-sm text-foreground">Add to Applications</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">"Add this job to my tracker"</div>
+                     <div className="text-xs text-muted-foreground mt-0.5">&rdquo;Add this job to my tracker&rdquo;</div>
                    </div>
                 </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left">
+                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
+                 onClick={() =>
+                                handlePromptClick("Mark [Company] as [Status]")
+                            }>
                    <CheckCircle2 className="w-5 h-5 text-purple-400 mr-3 shrink-0" />
                    <div>
                      <div className="font-semibold text-sm text-foreground">Update Status</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">"Mark XYZ Corp as Interview"</div>
+                     <div className="text-xs text-muted-foreground mt-0.5">&rdquo;Mark XYZ Corp as Interview&rdquo;</div>
                    </div>
                 </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left">
+                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left" onClick={() =>
+                                handlePromptClick("Based on my current applications and skills, what should my next career step be?")
+                            }>
                    <Map className="w-5 h-5 text-orange-400 mr-3 shrink-0" />
                    <div>
                      <div className="font-semibold text-sm text-foreground">Find Next Step</div>
@@ -105,41 +128,87 @@ export function CareerAssistant() {
               </div>
             </div>
           ) : (
-            messages.map((message, i) => (
-              <Message from={message.role} key={i}>
-                <MessageContent>
-                  <MessageResponse>
-                    {message.content}
-                  </MessageResponse>
-                </MessageContent>
-              </Message>
-            ))
+            messages.map((message) => (
+            <Message
+              from={message.role}
+              key={message.id}
+            >
+              <MessageContent>
+                {message.parts.map((part, index) =>
+                  part.type === "text" ? (
+                    <MessageResponse key={index}>
+                      {part.text}
+                    </MessageResponse>
+                  ) : null
+                )}
+              </MessageContent>
+            </Message>
+            
+          ))
+     
+          
+          )}
+
+          {error && (
+            <div className="text-sm text-destructive">
+              Sorry, something went wrong. Please try again.
+            </div>
           )}
         </ConversationContent>
 
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="p-4 bg-muted/20 border-t border-border/50">
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold text-muted-foreground px-1 uppercase tracking-wider">
-            Ask Career Assistant
-          </label>
-          <PromptInput onSubmit={handleSubmit} className="shrink-0 bg-background rounded-xl border border-border/50 shadow-sm focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all">
+     {/* Input */}
+      <div className="p-4 bg-card border-t border-border/50">
+
+        <div className="max-w-3xl mx-auto w-full">
+
+          <PromptInput
+            onSubmit={handleSubmit}
+            className="shrink-0 bg-background rounded-2xl border border-border/50 shadow-sm focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all"
+          >
+
             <PromptInputTextarea
-              placeholder="Paste a job description or give me a command..."
-              value={jobDescription}
-              className="min-h-[60px] max-h-[250px] border-0 focus-visible:ring-0 resize-none rounded-xl"
-              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Ask Alymera..."
+              value={prompt}
+              className="min-h-[50px] max-h-[250px] py-3.5 border-0 focus-visible:ring-0 resize-none rounded-2xl"
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit()
+                }
+              }}
             />
-            <div className="flex flex-col justify-end p-2 pb-1 pr-1">
-              <PromptInputSubmit
-                className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-8 w-8 flex items-center justify-center"
-                disabled={!jobDescription.trim()}
-              >
-              </PromptInputSubmit>
+
+            <div className="flex flex-col justify-end p-2 pb-2 pr-2">
+
+              {isLoading ? (
+                <PromptInputSubmit
+                  type="button"
+                  onClick={stop}
+                  className="rounded-xl bg-destructive text-destructive-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
+                >
+                  ■
+                </PromptInputSubmit>
+              ) : (
+                <PromptInputSubmit
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
+                  disabled={!prompt.trim()}
+                />
+              )}
+
             </div>
+
           </PromptInput>
+
+          <div className="text-center mt-2">
+            <p className="text-[10px] text-muted-foreground">
+              Alymera AI can make mistakes. Consider verifying important information.
+            </p>
+          </div>
+
         </div>
       </div>
     </div>
