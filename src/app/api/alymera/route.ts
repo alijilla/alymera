@@ -1,9 +1,25 @@
 import { groq } from "@ai-sdk/groq"
 import {
   convertToModelMessages,
+  stepCountIs,
   streamText,
   type UIMessage,
 } from "ai"
+
+import {
+  getProjects,
+  getProjectTasks,
+  getProjectMilestones,
+  getProjectProgress,
+  getApplications,
+  getResume,
+  createProject,
+  createTask,
+  createMilestone,
+  createApplication,
+  UpdateTask,
+  UpdateApplication,
+} from "@/lib/ai/tools"
 
 import { createClient } from "@/lib/supabase/server"
 import { systemPrompts } from "@/lib/ai/prompts"
@@ -11,6 +27,40 @@ import { systemPrompts } from "@/lib/ai/prompts"
 export const maxDuration = 30
 
 export async function POST(req: Request) {
+
+  const projectTools = {
+  getProjects,
+  getProjectTasks,
+  getProjectMilestones,
+  getProjectProgress,
+  createProject,
+  createTask,
+  createMilestone,
+  UpdateTask,
+}
+
+const careerTools = {
+  getApplications,
+  getResume,
+  createApplication,
+  UpdateApplication,
+}
+
+const alymeraTools = {
+  ...projectTools,
+  ...careerTools,
+}
+
+const codingTools = {
+  getProjects,
+  getProjectTasks,
+  getProjectMilestones,
+  getProjectProgress,
+  createProject,
+  createTask,
+  createMilestone,
+  UpdateTask,
+}
   try {
     const {
       messages,
@@ -49,6 +99,15 @@ export async function POST(req: Request) {
       model: groq("openai/gpt-oss-120b"),
       system: selectedPrompt,
       messages: await convertToModelMessages(messages),
+     tools:
+  assistant === "alymera"
+    ? alymeraTools
+    : assistant === "career"
+      ? careerTools
+      : assistant === "coding"
+        ? codingTools
+        : undefined,
+      stopWhen: stepCountIs(5),
     })
 
     return result.toUIMessageStreamResponse()

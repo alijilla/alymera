@@ -40,13 +40,15 @@ export function CareerAssistant() {
     transport: new DefaultChatTransport({
       api: "/api/alymera",
       body: {
-        assistant: "coding",
+        assistant: "career",
       },
     }),
   })
 
-  const isLoading =
-    status === "submitted" || status === "streaming"
+  // Chat status
+  const isSubmitted = status === "submitted"
+  const isStreaming = status === "streaming"
+  const isLoading = isSubmitted || isStreaming
 
   const handlePromptClick = (text: string) => {
     setPrompt(text)
@@ -149,6 +151,28 @@ export function CareerAssistant() {
           
           )}
 
+          {/* THINKING INDICATOR */}
+        
+            {status === "submitted" && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+        
+                  <Sparkles className="h-4 w-4 text-primary" />
+        
+                  <span className="text-sm text-muted-foreground">
+                    Alymera is thinking
+                  </span>
+        
+                  <span className="flex gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+                  </span>
+        
+                </div>
+              </div>
+            )}
+        
           {error && (
             <div className="text-sm text-destructive">
               Sorry, something went wrong. Please try again.
