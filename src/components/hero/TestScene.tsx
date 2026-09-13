@@ -72,7 +72,7 @@ export default function Hero3D() {
 
         <React.Suspense fallback={null}>
           {/* Environment */}
-          <Environment preset="studio" />
+          {/* <Environment preset="studio" /> */}
 
           {/* Shader Background */}
           <BackgroundShader
