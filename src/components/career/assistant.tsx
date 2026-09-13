@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
@@ -64,7 +63,11 @@ type Application = {
   created_at: string
 }
 
-export function CareerAssistant() {
+export function CareerAssistant({
+  conversationId: conversationIdProp,
+}: {
+  conversationId?: string | null
+}) {
   // --------------------------------------------------
   // Career Feature State
   // --------------------------------------------------
@@ -94,21 +97,18 @@ export function CareerAssistant() {
 
   const [prompt, setPrompt] = useState("")
 
-  const searchParams = useSearchParams()
-
-  const existingConversationId =
-    searchParams.get("conversationId")
+ 
 
   /*
    * This stores the conversation ID created by the API
    * when starting a brand-new conversation.
    */
-  const [createdConversationId, setCreatedConversationId] =
-    useState<string | null>(null)
+ const [createdConversationId, setCreatedConversationId] =
+  useState<string | null>(null)
 
-  const conversationId =
-    existingConversationId ??
-    createdConversationId
+const conversationId =
+  conversationIdProp ??
+  createdConversationId
 
   const {
     messages,
@@ -153,64 +153,61 @@ export function CareerAssistant() {
   // Load Existing Conversation
   // --------------------------------------------------
 
-  useEffect(() => {
-    if (!existingConversationId) {
+ useEffect(() => {
+  if (!conversationIdProp) {
+    return
+  }
+
+  async function loadConversation() {
+    const { data, error } =
+      await supabase
+        .from("messages")
+        .select(
+          "id, role, content, type"
+        )
+        .eq(
+          "conversation_id",
+          conversationIdProp
+        )
+        .order("created_at", {
+          ascending: true,
+        })
+
+    if (error) {
+      console.error(
+        "Failed to load conversation:",
+        error
+      )
+
       return
     }
 
-    async function loadConversation() {
-      const { data, error } =
-        await supabase
-          .from("messages")
-          .select(
-            "id, role, content, type"
-          )
-          .eq(
-            "conversation_id",
-            existingConversationId
-          )
-          .order("created_at", {
-            ascending: true,
-          })
+    const restoredMessages =
+      (data ?? []).map(
+        (message) => ({
+          id: message.id,
 
-      if (error) {
-        console.error(
-          "Failed to load conversation:",
-          error
-        )
+          role: message.role as
+            | "user"
+            | "assistant",
 
-        return
-      }
-
-      const restoredMessages =
-        (data ?? []).map(
-          (message) => ({
-            id: message.id,
-
-            role: message.role as
-              | "user"
-              | "assistant",
-
-            parts: [
-              {
-                type: "text" as const,
-                text: message.content,
-              },
-            ],
-          })
-        )
-
-      setMessages(
-        restoredMessages
+          parts: [
+            {
+              type: "text" as const,
+              text: message.content,
+            },
+          ],
+        })
       )
-    }
 
-    loadConversation()
-  }, [
-    existingConversationId,
-    setMessages,
-  ])
+    setMessages(restoredMessages)
+  }
 
+  loadConversation()
+}, [
+  conversationIdProp,
+  setMessages,
+])
   // --------------------------------------------------
   // Loading State
   // --------------------------------------------------

@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
-import { Sparkles, FileSearch, CheckCircle2, BookmarkPlus, Map } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import {
   Conversation,
   ConversationContent,
@@ -28,7 +27,6 @@ import { Button } from "../ui/button"
 
 export function CodingAssistant({
   projectId,
-  githubRepo,
   conversationId: conversationIdProp,
 }: {
   projectId?: string
@@ -37,13 +35,9 @@ export function CodingAssistant({
 })  {
   const [prompt, setPrompt] = useState("")
 
-  const searchParams = useSearchParams()
-
-  const existingConversationId =
-    searchParams.get("conversationId")
-
-  const [conversationId, setConversationId] =
-    useState<string | null>(existingConversationId)
+ 
+const [conversationId, setConversationId] =
+  useState<string | null>(conversationIdProp ?? null)
 
 const {
   messages,
@@ -83,19 +77,18 @@ const {
 useEffect(() => {
   async function loadConversation() {
     // No conversation ID means this is a new chat
-    if (!existingConversationId) {
-      setConversationId(null)
-      return
-    }
+    if (!conversationIdProp) {
+  setConversationId(null)
+  return
+}
 
-    // Keep the conversation ID
-    setConversationId(existingConversationId)
+setConversationId(conversationIdProp)
 
     // Get messages for this conversation
     const { data, error } = await supabase
       .from("messages")
       .select("id, role, content")
-      .eq("conversation_id", existingConversationId)
+      .eq("conversation_id",conversationIdProp)
       .order("created_at", {
         ascending: true,
       })
@@ -126,7 +119,7 @@ useEffect(() => {
   }
 
   loadConversation()
-}, [existingConversationId, setMessages])
+}, [conversationIdProp, setMessages])
   const isSubmitted = status === "submitted"
   const isStreaming = status === "streaming"
   const isLoading = isSubmitted || isStreaming
