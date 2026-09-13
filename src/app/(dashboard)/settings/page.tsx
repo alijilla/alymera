@@ -1,180 +1,320 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Settings, AlertCircle, Trash2 } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { useState } from "react"
+import {
+  AlertCircle,
+  KeyRound,
+  LockKeyhole,
+  Settings,
+  Trash2,
+} from "lucide-react"
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { supabase } from "@/lib/supabase/client"
 
 export default function SettingsPage() {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
+
+  const [passwordMessage, setPasswordMessage] = useState<{
+    type: "success" | "error"
+    text: string
+  } | null>(null)
 
   const handleUpdatePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage({ type: 'error', text: "Passwords do not match." });
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPasswordMessage({ type: 'error', text: "Password must be at least 8 characters." });
-      return;
+    setPasswordMessage(null)
+
+    if (!newPassword || !confirmPassword) {
+      setPasswordMessage({
+        type: "error",
+        text: "Please fill in both password fields.",
+      })
+      return
     }
 
-    setPasswordLoading(true);
-    setPasswordMessage(null);
+    if (newPassword.length < 8) {
+      setPasswordMessage({
+        type: "error",
+        text: "Password must be at least 8 characters.",
+      })
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({
+        type: "error",
+        text: "Passwords do not match.",
+      })
+      return
+    }
+
+    setPasswordLoading(true)
 
     const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
+      password: newPassword,
+    })
 
     if (error) {
-      console.error("Update password error:", error.message);
-      setPasswordMessage({ type: 'error', text: error.message });
-    } else {
-      setPasswordMessage({ type: 'success', text: "Password updated successfully!" });
-      setTimeout(() => {
-        setPasswordOpen(false);
-        setNewPassword("");
-        setConfirmPassword("");
-        setPasswordMessage(null);
-      }, 2000);
+      console.error("Update password error:", error)
+
+      setPasswordMessage({
+        type: "error",
+        text: error.message || "Failed to update password.",
+      })
+
+      setPasswordLoading(false)
+      return
     }
-    setPasswordLoading(false);
-  };
+
+    setPasswordMessage({
+      type: "success",
+      text: "Password updated successfully.",
+    })
+
+    setPasswordLoading(false)
+
+    setTimeout(() => {
+      setPasswordOpen(false)
+      setNewPassword("")
+      setConfirmPassword("")
+      setPasswordMessage(null)
+    }, 1500)
+  }
+
+  const handlePasswordDialogChange = (open: boolean) => {
+    setPasswordOpen(open)
+
+    if (!open) {
+      setNewPassword("")
+      setConfirmPassword("")
+      setPasswordMessage(null)
+    }
+  }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-6">
+    <main className="mx-auto w-full max-w-5xl space-y-5 p-3 sm:space-y-6 sm:p-5 md:p-6 lg:p-8">
+      {/* Header */}
+      <Card className="overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-r from-primary/10 via-transparent to-transparent shadow-sm transition-shadow duration-300 hover:shadow-md">
+        <div className="p-5 sm:p-6 md:p-8">
           <CardHeader className="p-0">
-            <CardTitle>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-2">
-                <Settings className="w-8 h-8 text-primary" />
-                Settings
-              </h1>
+            <CardTitle className="flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
+              <Settings className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
+              <span>Settings</span>
             </CardTitle>
-            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Manage your account preferences and security.
+
+            <CardDescription className="mt-2 max-w-2xl text-sm font-medium leading-6 sm:text-base">
+              Manage your account security and important account actions.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-0 flex-shrink-0">
-          </CardContent>
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Left Column */}
-        <div className="space-y-6">
-          {/* Account Section */}
-          <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold tracking-tight">Account Security</CardTitle>
-              <CardDescription className="font-medium mt-1">Update your password to keep your account secure.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
-                <DialogTrigger asChild>
-                  <Button className="rounded-xl">Update Password</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] rounded-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Change Password</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input 
-                        id="newPassword" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="rounded-lg" 
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input 
-                        id="confirmPassword" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="rounded-lg" 
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                      />
-                    </div>
-                    {passwordMessage && (
-                      <p className={`text-sm ${passwordMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-                        {passwordMessage.text}
-                      </p>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" className="rounded-xl" onClick={() => setPasswordOpen(false)}>Cancel</Button>
-                    <Button className="rounded-xl" onClick={handleUpdatePassword} disabled={passwordLoading}>
-                      {passwordLoading ? "Saving..." : "Save Password"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Account Security */}
+      <Card className="rounded-2xl border-border/50 shadow-sm">
+        <CardHeader className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <LockKeyhole className="h-5 w-5 text-primary" />
+            </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Danger Zone */}
-          <Card className="bg-card border border-destructive/30 shadow-sm rounded-2xl bg-destructive/5">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold tracking-tight text-destructive flex items-center gap-2">
-                <AlertCircle size={20} />
+            <div className="min-w-0">
+              <CardTitle className="text-lg font-bold tracking-tight">
+                Account Security
+              </CardTitle>
+
+              <CardDescription className="mt-1 text-sm leading-5">
+                Keep your ALYMERA account secure by managing your password.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
+          <div className="flex flex-col gap-4 rounded-xl border border-border/50 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background shadow-sm">
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  Password
+                </p>
+
+                <p className="text-xs text-muted-foreground">
+                  Update your account password
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setPasswordOpen(true)}
+              className="w-full rounded-xl sm:w-auto"
+            >
+              Update Password
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="rounded-2xl border-destructive/30 bg-destructive/[0.03] shadow-sm">
+        <CardHeader className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+            </div>
+
+            <div className="min-w-0">
+              <CardTitle className="text-lg font-bold tracking-tight text-destructive">
                 Danger Zone
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-                  Permanently delete your account and all of your content. This action cannot be undone.
-               </p>
-               <Dialog>
-                 <DialogTrigger asChild>
-                   <Button variant="destructive" className="w-full rounded-xl flex items-center gap-2 transition-all hover:bg-destructive/90">
-                     <Trash2 size={16} /> Delete Account
-                   </Button>
-                 </DialogTrigger>
-                 <DialogContent className="sm:max-w-[400px] rounded-2xl text-center p-6">
-                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
-                     <Trash2 className="h-6 w-6 text-destructive" />
-                   </div>
-                   <DialogHeader>
-                     <DialogTitle className="text-center text-xl">Delete Account Unavailable</DialogTitle>
-                   </DialogHeader>
-                   <p className="text-sm text-muted-foreground font-medium mb-6">
-                     Account deletion is currently unavailable as it requires a secure backend endpoint to safely remove auth data.
-                   </p>
-                   <DialogFooter className="flex w-full sm:justify-center gap-2">
-                     <DialogTrigger asChild>
-                       <Button type="button" variant="outline" className="rounded-xl flex-1">
-                         Close
-                       </Button>
-                     </DialogTrigger>
-                   </DialogFooter>
-                 </DialogContent>
-               </Dialog>
-            </CardContent>
-          </Card>
 
-        </div>
-      </div>
-    </div>
-  );
+              <CardDescription className="mt-1 text-sm leading-5">
+                Permanent account actions that cannot be easily undone.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
+          <div className="flex flex-col gap-4 rounded-xl border border-destructive/20 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">
+                Delete Account
+              </p>
+
+              <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">
+                Permanently remove your ALYMERA account and associated
+                content. This feature is currently unavailable.
+              </p>
+            </div>
+
+            <Button
+              variant="destructive"
+              className="w-full shrink-0 rounded-xl sm:w-auto"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Account
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Password Dialog */}
+      <Dialog
+        open={passwordOpen}
+        onOpenChange={handlePasswordDialogChange}
+      >
+        <DialogContent className="w-[calc(100%-1rem)] rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LockKeyhole className="h-5 w-5 text-primary" />
+              Change Password
+            </DialogTitle>
+
+            <DialogDescription>
+              Choose a new password with at least 8 characters.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">
+                New Password
+              </Label>
+
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(event) =>
+                  setNewPassword(event.target.value)
+                }
+                placeholder="Enter new password"
+                className="rounded-xl"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">
+                Confirm New Password
+              </Label>
+
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) =>
+                  setConfirmPassword(event.target.value)
+                }
+                placeholder="Confirm new password"
+                className="rounded-xl"
+                autoComplete="new-password"
+              />
+            </div>
+
+            {passwordMessage && (
+              <div
+                role="alert"
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium ${
+                  passwordMessage.type === "success"
+                    ? "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+                    : "border-destructive/20 bg-destructive/10 text-destructive"
+                }`}
+              >
+                {passwordMessage.text}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handlePasswordDialogChange(false)}
+              disabled={passwordLoading}
+              className="w-full rounded-xl sm:w-auto"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleUpdatePassword}
+              disabled={
+                passwordLoading ||
+                !newPassword ||
+                !confirmPassword
+              }
+              className="w-full rounded-xl sm:w-auto"
+            >
+              {passwordLoading ? "Updating..." : "Update Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </main>
+  )
 }

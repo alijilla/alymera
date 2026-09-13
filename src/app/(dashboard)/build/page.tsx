@@ -382,22 +382,11 @@ function handleDelete(project: Project) {
       toast.success("Project updated successfully");
     }
 
-
-
-  useEffect(() =>
- {
- getProjects()
- 
- 
- },[])
- 
-
-
-  return (
+return (
     
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
     
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
+      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-primary/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-4">
           <CardHeader className="p-0">
             <CardTitle>
@@ -413,7 +402,7 @@ function handleDelete(project: Project) {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} >
               <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" >             
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 py-5 shadow-lg shadow-primary/20 transition-all hover:scale-105" >             
                 <PlusCircleIcon className="mr-2 h-5 w-5 text-orange-300" /> Create Project  
               </Button>
               </DialogTrigger>
@@ -691,7 +680,7 @@ function handleDelete(project: Project) {
             <p className="text-sm text-muted-foreground mb-6">Create your first project to get started</p>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} >
               <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-2" >             
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 py-2" >             
                 <PlusCircleIcon className="mr-2 h-5 w-5" /> Create Project  
               </Button>
               </DialogTrigger>
@@ -718,207 +707,17 @@ function handleDelete(project: Project) {
     
     
     
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} >
 
-                
-                  <DialogContent className="w-full h-[600px] max-h-[calc(100vh-120px)] shadow-2xl flex flex-col overflow-y-scroll">  
-
-                   <Form {...editProjectForm}>
-                      <form onSubmit={editProjectForm.handleSubmit(handleEdit, (errors) => console.log("ZOD ERRORS:", errors))} className="space-y-6">
-                            <FormDescription>Input Your Project Details.</FormDescription>
-                            <FormField 
-                            control={editProjectForm.control}
-                              name="name"
-                              render={({ field }) => (
-                           <FormItem>
-                              <FormLabel>Project Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="i.eg AI Project Manager"  {...field}  />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-
-                              )} />
-
-                              <FormField 
-                               control={editProjectForm.control}
-                               name="description"
-                               render={({ field }) => (
-                              <FormItem>
-                              <FormLabel>Description</FormLabel>
-                              <FormControl>
-                                <Input placeholder="i.eg Build an ai powered project manager" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
- 
-                               )}/>
-
-
-                             <FormField 
-                               control={editProjectForm.control}
-                               name="tech_stack"
-                               render={({ field }) => (
-                              <FormItem>
-                              <FormLabel>Techstack</FormLabel>
-                              <FormControl>
-                            <Input placeholder="e.g react, typescript, next.js" 
-                             {...field}                                                 
-                            />
-
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
- 
-                               )}/>
-
-
-                                <FormField
-                                 control={editProjectForm.control}
-                                 name="image_src"
-                                 render={({  field: { onChange, value, ...fieldProps } }) => (
-                               <FormItem>
-                              <FormLabel>Icon</FormLabel>
-                              <FormControl>
-                                <Input 
-                                type="file" 
-                                placeholder="i.eg image" {...fieldProps}
-                                onChange={(e) =>
-                                  onChange(e.target.files && e.target.files[0])
-                                }/>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-
-
-                                 )}/>
-                           
-
-                            <FormField
-                              control={editProjectForm.control}
-                              name="status"
-                              render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <FormControl>
-
-                        <Select  onValueChange={field.onChange} defaultValue={field.value}>
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select a Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectGroup>
-                                  <SelectLabel>Status</SelectLabel>
-                               
-                                    <SelectItem value="Planning">
-                                     Planning
-                                    </SelectItem>
-                                    <SelectItem value="In Progress">
-                                     In Progress
-                                    </SelectItem>
-                                  <SelectItem value="Complete">
-                                     Complete
-                                    </SelectItem>
-                    
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>                  
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-  )}
-/>  
-                            { isEditselectedStatus === "Complete" ? null :
-       
-                         
-                            <FormField
-                              control={editProjectForm.control}
-                              name="due_date"
-                              render={({field}) => (<FormItem>
-                              <FormLabel>DueDate</FormLabel>
-                              <FormControl className="flex-1">
-                            <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline"> 
-                              {field.value ? format(field.value, "PPP") : <><CalendarIcon className="w-4 h-4 mr-2" /> Pick a date</>}
-                              </Button>                             
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} />
-                            </PopoverContent>
-                          </Popover>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem> )}               
-                            />
-                  
-                            }
-
-                      <DialogFooter>
-                         <Button type="submit" className="flex-1" >Edit</Button>       
-                        
-                      </DialogFooter>
-                           
-                      </form>
-                       
-                    </Form>
-                 
-               
-
-              </DialogContent>
-            </Dialog>
-    
-    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete project</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="destructive"
-                onClick={async () => {
-  if (!deletingProject) return
-
-  const { error } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", deletingProject.id)
-
-  if (error) {
-    console.log("Delete error:", error)
-    toast.error(error.message)
-    return
-  }
-
-  setIsDeleteDialogOpen(false)
-  setDeletingProject(null)
-  getProjects()
-  toast.success("Project deleted")
-}}
-                
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-    
-      </Dialog>
    
 
         {/* Active Project */}
-        <Card className="bg-card shadow-sm flex flex-col h-full border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border" >
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-             <Badge variant="outline" className="bg-muted/50 text-foreground font-medium border-border/50">{proj.status}</Badge>
+        <Card className="group bg-card shadow-sm flex flex-col h-full border border-border/50 rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30" >
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4">
+             <Badge variant="outline" className="bg-muted/50 text-foreground font-medium border-border/50 rounded-full px-2.5 py-0.5">{proj.status}</Badge>
             </CardTitle>
 
-             <div className="flex flex-row items-start justify-between p-4 pb-2">
-                                    <p className="font-semibold text-sm leading-tight line-clamp-2 pr-4">
-                                   
-                                    </p>
+             <div className="flex items-start justify-end px-4 pt-4">
                                     <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
@@ -953,8 +752,8 @@ function handleDelete(project: Project) {
                                     </DropdownMenu>
                                 </div>
           </CardHeader>
-          <CardContent className="space-y-6 flex-1 px-4 md:px-6">
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30">
+          <CardContent className="space-y-5 flex-1 px-4 md:px-6 pb-6">
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/30">
             <Avatar className="size-[48px] flex-shrink-0 shadow-sm border border-border/50">
                 <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials (proj.name)}</AvatarFallback>
                 <AvatarImage 
@@ -987,11 +786,11 @@ function handleDelete(project: Project) {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex items-center justify-between border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl mt-auto">
-            <Link href={`/build/projects/${proj.id}`} className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-              View project <ArrowRight className="ml-2 w-4 h-4" />
+          <CardFooter className="flex items-center justify-between gap-3 border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl mt-auto">
+            <Link href={`/build/projects/${proj.id}`} className="inline-flex items-center text-sm font-semibold text-foreground hover:text-primary transition-colors group/link">
+              View project <ArrowRight className="ml-1.5 w-4 h-4 transition-transform group-hover/link:translate-x-0.5" />
             </Link>
-            <div className="flex items-center text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-3 py-1.5 rounded-full">
+            <div className="flex items-center text-xs font-medium text-muted-foreground bg-background/80 border border-border/50 px-3 py-1.5 rounded-full whitespace-nowrap">
               <CalendarIcon className="w-3.5 h-3.5 mr-2 text-primary" />
              {proj.due_date
   ? format(parseISO(proj.due_date), "PPP")
@@ -1006,6 +805,217 @@ function handleDelete(project: Project) {
       </div>
     )}
       
+      {/* 
+        EDIT AND DELETE DIALOGS 
+        Moved outside the loop to prevent multiple instances
+      */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="w-full max-w-lg h-[600px] max-h-[calc(100vh-120px)] shadow-2xl flex flex-col overflow-y-scroll">
+          <Form {...editProjectForm}>
+            <form
+              onSubmit={editProjectForm.handleSubmit(
+                handleEdit,
+                (errors) => console.log("ZOD ERRORS:", errors)
+              )}
+              className="space-y-6"
+            >
+              <FormDescription>Input Your Project Details.</FormDescription>
+
+              <FormField
+                control={editProjectForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="i.eg AI Project Manager" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editProjectForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="i.eg Build an ai powered project manager"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editProjectForm.control}
+                name="tech_stack"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Techstack</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g react, typescript, next.js"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editProjectForm.control}
+                name="image_src"
+                render={({ field: { onChange, value, ...fieldProps } }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        placeholder="i.eg image"
+                        {...fieldProps}
+                        onChange={(e) =>
+                          onChange(e.target.files && e.target.files[0])
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editProjectForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Status</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Status</SelectLabel>
+                              <SelectItem value="Planning">Planning</SelectItem>
+                              <SelectItem value="In Progress">In Progress</SelectItem>
+                              <SelectItem value="Complete">Complete</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {isEditselectedStatus === "Complete" ? (
+                  <div />
+                ) : (
+                  <FormField
+                    control={editProjectForm.control}
+                    name="due_date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Due Date</FormLabel>
+                        <FormControl>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start font-normal"
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <>
+                                    <CalendarIcon className="w-4 h-4 mr-2" />
+                                    Pick a date
+                                  </>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Milestones</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Manage this project&apos;s milestones from the project workspace.
+                </p>
+              </div>
+
+              <DialogFooter>
+                <Button type="submit" className="flex-1">
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete project</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!deletingProject) return
+                const { error } = await supabase
+                  .from("projects")
+                  .delete()
+                  .eq("id", deletingProject.id)
+
+                if (error) {
+                  console.log("Delete error:", error)
+                  toast.error(error.message)
+                  return
+                }
+
+                setIsDeleteDialogOpen(false)
+                setDeletingProject(null)
+                getProjects()
+                toast.success("Project deleted")
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

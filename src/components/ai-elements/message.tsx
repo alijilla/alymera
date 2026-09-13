@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,23 +46,33 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
   />
 );
 
-export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
+export type MessageContentProps = HTMLAttributes<HTMLDivElement> & {
+  from?: UIMessage["role"];
+};
 
 export const MessageContent = ({
   children,
   className,
+  from,
   ...props
 }: MessageContentProps) => (
-  <div
-    className={cn(
-      "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
-      className
+  <div className={cn("flex w-full gap-3", from === "user" ? "justify-end" : "justify-start")}>
+    {from !== "user" && (
+      <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden border border-border/50 bg-primary/10 flex items-center justify-center mt-1">
+        <Image src="/img/mascot.png" alt="Mascot" width={32} height={32} className="object-cover" />
+      </div>
     )}
-    {...props}
-  >
-    {children}
+    <div
+      className={cn(
+        "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-x-auto text-sm",
+        "group-[.is-user]:ml-auto group-[.is-user]:rounded-2xl group-[.is-user]:bg-primary group-[.is-user]:px-5 group-[.is-user]:py-3.5 group-[.is-user]:text-primary-foreground group-[.is-user]:shadow-sm",
+        "group-[.is-assistant]:text-foreground group-[.is-assistant]:bg-card group-[.is-assistant]:border group-[.is-assistant]:border-border/40 group-[.is-assistant]:rounded-2xl group-[.is-assistant]:px-5 group-[.is-assistant]:py-4 group-[.is-assistant]:shadow-sm",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
   </div>
 );
 

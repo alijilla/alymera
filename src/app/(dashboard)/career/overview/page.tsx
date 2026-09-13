@@ -1,187 +1,438 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Send, CalendarCheck, BadgeCheck, XCircle, ArrowRight, BriefcaseBusiness } from 'lucide-react';
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import {
+  ArrowRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CalendarCheck,
+  Send,
+  XCircle,
+  Sparkles,
+} from "lucide-react"
 
-// --- Type Definition ---
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase/client"
+
 type Application = {
-  id: string;
-  position: string;
-  company: string | null;
-  status: string;
-  date_applied: string | null;
-  created_at: string;
-};
+  id: string
+  position: string
+  company: string | null
+  status: string
+  date_applied: string | null
+  created_at: string
+}
+
+function formatDate(date?: string | null) {
+  if (!date) return "Date unknown"
+
+  const parsed = new Date(date)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Date unknown"
+  }
+
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
+function getStatusClass(status: string) {
+  switch (status) {
+    case "Interview":
+      return "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-400"
+
+    case "Offer":
+      return "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+
+    case "Rejected":
+      return "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+
+    case "Ghosted":
+      return "border-muted-foreground/20 bg-muted text-muted-foreground"
+
+    case "Applied":
+      return "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+
+    default:
+      return "border-border bg-muted text-muted-foreground"
+  }
+}
 
 export default function CareerOverview() {
-  const [loading, setLoading] = useState(true);
-  const [applications, setApplications] = useState<Application[]>([]);
 
-  useEffect(() => {
-    async function loadStats() {
-      setLoading(true);
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr) console.error("Auth error:", authErr);
-      if (!user) return;
+ const [loading, setLoading] = useState(true)
+const [applications, setApplications] = useState<Application[]>([])
 
-      const { data, error } = await supabase
-        .from('applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+useEffect(() => {
+  let cancelled = false
 
-      if (error) {
-        console.error("Applications fetch error:", error.message, error.details, error.hint);
-      } else if (data) {
-        setApplications(data as Application[]);
-      }
-      setLoading(false);
+  const loadApplications = async () => {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (cancelled) return
+
+    if (authError) {
+      console.error("Auth error:", authError)
+      setLoading(false)
+      return
     }
-    loadStats();
-  }, []);
 
-  const total = applications.length;
-  const interviews = applications.filter(a => a.status === 'Interview').length;
-  const offers = applications.filter(a => a.status === 'Offer').length;
-  const rejected = applications.filter(a => a.status === 'Rejected' || a.status === 'Ghosted').length;
+    if (!user) {
+      setApplications([])
+      setLoading(false)
+      return
+    }
 
-  const recent = applications.slice(0, 4);
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
 
-  const stats = [
-    { label: "Total Applications", value: total, icon: <Send className="w-5 h-5 text-blue-500" /> },
-    { label: "Interviews", value: interviews, icon: <CalendarCheck className="w-5 h-5 text-orange-500" /> },
-    { label: "Offers", value: offers, icon: <BadgeCheck className="w-5 h-5 text-green-500" /> },
-    { label: "Rejected / Ghosted", value: rejected, icon: <XCircle className="w-5 h-5 text-muted-foreground" /> },
-  ];
+    if (cancelled) return
+
+    if (error) {
+      console.error("Applications fetch error:", error)
+      setApplications([])
+      setLoading(false)
+      return
+    }
+
+    setApplications((data ?? []) as Application[])
+    setLoading(false)
+  }
+
+  loadApplications()
+
+  const channel = supabase
+    .channel("career-overview-applications")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "applications",
+      },
+      async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user || cancelled) return
+
+        const { data, error } = await supabase
+          .from("applications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+
+        if (error || cancelled) return
+
+        setApplications((data ?? []) as Application[])
+      }
+    )
+    .subscribe()
+
+  return () => {
+    cancelled = true
+    supabase.removeChannel(channel)
+  }
+}, [])
+  const stats = useMemo(() => {
+    const total = applications.length
+
+    const interviews = applications.filter(
+      (application) => application.status === "Interview"
+    ).length
+
+    const offers = applications.filter(
+      (application) => application.status === "Offer"
+    ).length
+
+    const rejected = applications.filter(
+      (application) =>
+        application.status === "Rejected" ||
+        application.status === "Ghosted"
+    ).length
+
+    return [
+      {
+        label: "Applications",
+        value: total,
+        icon: Send,
+        iconClass: "text-blue-500",
+      },
+      {
+        label: "Interviews",
+        value: interviews,
+        icon: CalendarCheck,
+        iconClass: "text-orange-500",
+      },
+      {
+        label: "Offers",
+        value: offers,
+        icon: BadgeCheck,
+        iconClass: "text-green-500",
+      },
+      {
+        label: "Rejected / Ghosted",
+        value: rejected,
+        icon: XCircle,
+        iconClass: "text-muted-foreground",
+      },
+    ]
+  }, [applications])
+
+  const recentApplications = applications.slice(0, 4)
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-6">
-          <CardHeader className="p-0">
-            <CardTitle>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-2">
-                 <BriefcaseBusiness className="w-8 h-8 text-primary" />
-                 Career Hub
-              </h1>
-            </CardTitle>
-            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Your career snapshot and recent job search activity.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 flex-shrink-0">
-            <Button asChild className="rounded-xl shadow-sm transition-all hover:scale-105">
-              <Link href="/career/applications">
-                View Applications <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </div>
-      </Card>
+    <main className="min-h-screen w-full bg-background">
+      <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 sm:space-y-6 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        {stats.map((stat) => (
-           <Card key={stat.label} className="bg-card border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 rounded-2xl">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
-             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-               {stat.label}
-             </CardTitle>
-             <div className="p-2 bg-muted/50 rounded-xl">
-               {stat.icon}
-             </div>
-           </CardHeader>
-           <CardContent className="px-5 pb-5 pt-0">
-             {loading ? (
-                <div className="h-8 w-12 bg-muted/50 rounded animate-pulse" />
-             ) : (
-                <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
-             )}
-           </CardContent>
-         </Card>
-        ))}
-      </div>
+        {/* HERO */}
+        <Card className="overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-sm">
+          <CardContent className="p-5 sm:p-6 lg:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <BriefcaseBusiness className="h-6 w-6 text-primary" />
+                  </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        
-        <Card className="bg-card shadow-sm flex flex-col border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold tracking-tight">Recent Applications</CardTitle>
-            <CardDescription className="text-sm font-medium text-muted-foreground">
-              Your latest job applications
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 flex-1 px-4 md:px-6">
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-muted/30 rounded-xl animate-pulse" />
-                ))}
-              </div>
-            ) : recent.length === 0 ? (
-               <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full bg-muted/10">
-                 <Send className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                 <p className="text-sm font-medium text-foreground">No applications yet</p>
-                 <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Start tracking your job search here.</p>
-               </div>
-            ) : (
-              recent.map((app) => (
-                <div key={app.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50 hover:bg-muted/40 transition-colors">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{app.position}</h3>
-                    <p className="text-sm font-medium text-muted-foreground">{app.company || "Unknown Company"}</p>
-                    <p className="text-xs font-medium text-muted-foreground mt-1 flex items-center gap-1">
-                      <span className="inline-block w-1 h-1 rounded-full bg-primary/50" />
-                      Applied • {app.date_applied ? new Date(app.date_applied).toLocaleDateString() : "Date unknown"}
+                  <div className="min-w-0">
+                    <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+                      Career Hub
+                    </h1>
+
+                    <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                      Your career snapshot and recent job search activity.
                     </p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <span className="text-xs font-semibold text-muted-foreground bg-background border border-border/50 shadow-sm px-3 py-1.5 rounded-full">
-                      {app.status}
+                </div>
+              </div>
+
+              <Button
+                asChild
+                className="w-full rounded-xl sm:w-auto"
+              >
+                <Link href="/career/applications">
+                  View Applications
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* STATS */}
+        <section
+          aria-label="Career statistics"
+          className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5"
+        >
+          {stats.map((stat) => {
+            const Icon = stat.icon
+
+            return (
+              <Card
+                key={stat.label}
+                className="rounded-2xl border border-border/50 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <CardHeader className="flex flex-row items-start justify-between gap-2 p-4 pb-2 sm:p-5 sm:pb-2">
+                  <CardTitle className="min-w-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                    {stat.label}
+                  </CardTitle>
+
+                  <div className="shrink-0 rounded-xl bg-muted/60 p-2">
+                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.iconClass}`} />
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-4 pt-1 sm:p-5 sm:pt-1">
+                  {loading ? (
+                    <div className="h-8 w-12 animate-pulse rounded-md bg-muted" />
+                  ) : (
+                    <div className="text-2xl font-bold tracking-tight sm:text-3xl">
+                      {stat.value}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </section>
+
+        {/* MAIN CONTENT */}
+        <section className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
+
+          {/* RECENT APPLICATIONS */}
+          <Card className="min-w-0 overflow-hidden rounded-2xl border border-border/50 shadow-sm">
+            <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-4">
+              <CardTitle className="text-lg font-bold tracking-tight sm:text-xl">
+                Recent Applications
+              </CardTitle>
+
+              <p className="text-sm text-muted-foreground">
+                Your latest job applications.
+              </p>
+            </CardHeader>
+
+            <CardContent className="flex-1 space-y-3 px-4 sm:px-6">
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="h-[82px] animate-pulse rounded-xl bg-muted/40"
+                    />
+                  ))}
+                </div>
+              ) : recentApplications.length === 0 ? (
+                <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/50 bg-muted/10 px-5 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <Send className="h-5 w-5 text-muted-foreground" />
+                  </div>
+
+                  <h3 className="font-semibold">
+                    No applications yet
+                  </h3>
+
+                  <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                    Start tracking your job applications to see your
+                    career activity here.
+                  </p>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="mt-5"
+                  >
+                    <Link href="/career/applications">
+                      Add Application
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                recentApplications.map((application) => (
+                  <div
+                    key={application.id}
+                    className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/50 bg-muted/20 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <h3 className="truncate font-semibold">
+                        {application.position}
+                      </h3>
+
+                      <p className="truncate text-sm font-medium text-muted-foreground">
+                        {application.company || "Unknown Company"}
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Applied ·{" "}
+                        {formatDate(application.date_applied)}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`w-fit shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusClass(
+                        application.status
+                      )}`}
+                    >
+                      {application.status}
                     </span>
                   </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-          <CardFooter className="flex items-center border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl">
-            <Link href="/career/applications" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-              View all applications <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </CardFooter>
-        </Card>
+                ))
+              )}
+            </CardContent>
 
-        {/* Placeholder for future Analytics / AI Insights */}
-        <Card className="bg-card shadow-md border border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-transparent rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg">
-           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <span className="text-purple-500">✨</span> Next Steps
-            </CardTitle>
-            <CardDescription className="text-sm font-medium text-muted-foreground">
-              AI-driven career insights
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 px-4 md:px-6 flex flex-col items-center justify-center text-center py-10">
-              <div className="bg-purple-500/10 p-4 rounded-full mb-4 shadow-sm border border-purple-500/20">
-                <Send className="w-8 h-8 text-purple-500 opacity-80" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground">Keep the momentum going</h3>
-              <p className="mt-2 text-sm font-medium text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Connect your Resume and track more applications to let Alymera AI suggest your next career move.
+            <CardFooter className="mt-4 border-t border-border/50 bg-muted/10 px-5 py-4 sm:px-6">
+              <Link
+                href="/career/applications"
+                className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+              >
+                View all applications
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </CardFooter>
+          </Card>
+
+          {/* NEXT STEPS */}
+          <Card className="min-w-0 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-sm">
+            <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Next Steps
+              </CardTitle>
+
+              <p className="text-sm text-muted-foreground">
+                AI-powered career guidance.
               </p>
-          </CardContent>
-          <CardFooter className="border-t border-purple-500/10 pt-4 pb-4 px-6 bg-purple-500/5 rounded-b-2xl">
-             <Link href="/career/assistant" className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-500 flex items-center transition-colors">
-              Talk to Career Assistant <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </CardFooter>
-        </Card>
+            </CardHeader>
 
+            <CardContent className="flex min-h-[260px] flex-1 flex-col items-center justify-center px-5 py-8 text-center sm:px-8">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+
+              <h3 className="text-lg font-bold sm:text-xl">
+                Keep the momentum going
+              </h3>
+
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                Let Alymera analyze your resume, compare it with job
+                descriptions, and help you prepare for interviews.
+              </p>
+
+              <div className="mt-6 grid w-full max-w-sm grid-cols-1 gap-2 text-left sm:grid-cols-3">
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3">
+                  <p className="text-xs font-semibold">
+                    Resume
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Improve your profile
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3">
+                  <p className="text-xs font-semibold">
+                    Job Match
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Compare opportunities
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border/50 bg-background/60 p-3">
+                  <p className="text-xs font-semibold">
+                    Interview
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Prepare with AI
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+
+            <CardFooter className="border-t border-primary/10 bg-primary/5 px-5 py-4 sm:px-6">
+              <Link
+                href="/career/assistant"
+                className="flex items-center text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+              >
+                Talk to Career Assistant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </CardFooter>
+          </Card>
+        </section>
       </div>
-    </div>
-  );
+    </main>
+  )
 }

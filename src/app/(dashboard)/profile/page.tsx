@@ -1,267 +1,494 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Save, Upload, UserRound } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase/client";
+import { useEffect, useState } from "react"
+import {
+  Link as LinkIcon,
+  MapPin,
+  Phone,
+  Save,
+  Upload,
+  UserRound,
+} from "lucide-react"
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { supabase } from "@/lib/supabase/client"
 
 export default function ProfilePage() {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
-  // Form State
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null)
+
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [location, setLocation] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
+
+  const [githubUrl, setGithubUrl] = useState("")
+  const [linkedinUrl, setLinkedinUrl] = useState("")
+  const [portfolioUrl, setPortfolioUrl] = useState("")
+
+  const [message, setMessage] = useState<{
+    type: "success" | "error"
+    text: string
+  } | null>(null)
+
   useEffect(() => {
+    let cancelled = false
+
     async function loadProfile() {
-      setLoading(true);
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr) {
-        console.error("Auth error:", authErr);
-        setLoading(false);
-        return;
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
+      if (authError) {
+        console.error("Auth error:", authError)
+        if (!cancelled) setLoading(false)
+        return
       }
-      
-      if (user) {
-        setUserId(user.id);
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
 
-        if (profileErr) {
-          console.error("Profile load error:", profileErr);
-        }
-
-        if (profile) {
-          setFullName(profile.full_name || "");
-          setEmail( user.email || "");
-          setPhone(profile.phone || "");
-          setLocation(profile.location || "");
-          setAvatarUrl(profile.avatar_url || "");
-        } else {
-          setEmail(user.email || "");
-        }
+      if (!user || cancelled) {
+        if (!cancelled) setLoading(false)
+        return
       }
-      setLoading(false);
 
+      setUserId(user.id)
+      setEmail(user.email ?? "")
 
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select(
+          "full_name, phone, location, avatar_url, github_url, linkedin_url, portfolio_url"
+        )
+        .eq("id", user.id)
+        .maybeSingle()
 
+      if (error) {
+        console.error("Profile load error:", error)
+      }
 
+      if (!cancelled && profile) {
+        setFullName(profile.full_name ?? "")
+        setPhone(profile.phone ?? "")
+        setLocation(profile.location ?? "")
+        setAvatarUrl(profile.avatar_url ?? "")
+        setGithubUrl(profile.github_url ?? "")
+        setLinkedinUrl(profile.linkedin_url ?? "")
+        setPortfolioUrl(profile.portfolio_url ?? "")
+      }
 
-
-  
-
-    }
-    loadProfile();
-  }, []);
-
-  const uploadImageToSupabase = async (file: File) => {
-  setIsUploading(true);
-
-  try {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `avatars/${userId}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("profile-images")
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
+      if (!cancelled) {
+        setLoading(false)
+      }
     }
 
-    const { data } = supabase.storage
-      .from("profile-images")
-      .getPublicUrl(filePath);
+    void loadProfile()
 
-    return data.publicUrl;
-  } catch (error) {
-    const err = error as Error;
-    console.error("Avatar upload error:", err);
-    return null;
-  } finally {
-    setIsUploading(false);
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function uploadImageToSupabase(file: File) {
+    if (!userId) return null
+
+    setIsUploading(true)
+
+    try {
+      const fileExt = file.name.split(".").pop() || "jpg"
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const filePath = `avatars/${userId}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data } = supabase.storage
+        .from("profile-images")
+        .getPublicUrl(filePath)
+
+      return data.publicUrl
+    } catch (error) {
+      console.error("Avatar upload error:", error)
+
+      setMessage({
+        type: "error",
+        text: "Failed to upload avatar.",
+      })
+
+      return null
+    } finally {
+      setIsUploading(false)
+    }
   }
-};
-  const handleSave = async () => {
-    if (!userId) return;
-    setSaving(true);
-    setMessage(null);
 
-    const { error } = await supabase.from('profiles').upsert({
-      id: userId,
-      full_name: fullName,
-      email: email,
-      phone: phone,
-      location: location,
-      avatar_url: avatarUrl,
-    });
+  async function handleAvatarChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0]
+
+    if (!file || !userId) return
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({
+        type: "error",
+        text: "Please select an image file.",
+      })
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({
+        type: "error",
+        text: "Image must be smaller than 5 MB.",
+      })
+      return
+    }
+
+    const url = await uploadImageToSupabase(file)
+
+    if (!url) return
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: url })
+      .eq("id", userId)
 
     if (error) {
-      console.error("Error saving profile:", error.message, error.details, error.hint);
-      setMessage({ type: 'error', text: "Failed to save profile. Please try again." });
-    } else {
-      setMessage({ type: 'success', text: "Profile updated successfully." });
-    }
-    setSaving(false);
-  };
+      console.error("Avatar profile update error:", error)
 
-  if (loading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
+      setMessage({
+        type: "error",
+        text: "Avatar uploaded but could not be saved.",
+      })
+
+      return
+    }
+
+    setAvatarUrl(url)
+
+    setMessage({
+      type: "success",
+      text: "Avatar updated successfully.",
+    })
   }
 
+  async function handleSave() {
+    if (!userId) return
+
+    setSaving(true)
+    setMessage(null)
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: userId,
+        full_name: fullName,
+        phone,
+        location,
+        avatar_url: avatarUrl,
+        github_url: githubUrl,
+        linkedin_url: linkedinUrl,
+        portfolio_url: portfolioUrl,
+      })
+
+    if (error) {
+      console.error("Profile save error:", error)
+
+      setMessage({
+        type: "error",
+        text: "Failed to save profile. Please try again.",
+      })
+    } else {
+      setMessage({
+        type: "success",
+        text: "Profile updated successfully.",
+      })
+    }
+
+    setSaving(false)
+  }
+
+  if (loading) {
+    return (
+      <main className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8">
+        <div className="space-y-6">
+          <div className="h-32 animate-pulse rounded-2xl bg-muted/50" />
+          <div className="h-64 animate-pulse rounded-2xl bg-muted/50" />
+          <div className="h-56 animate-pulse rounded-2xl bg-muted/50" />
+        </div>
+      </main>
+    )
+  }
+
+  const initials =
+    fullName
+      .trim()
+      .split(/\s+/)
+      .map((word) => word[0])
+      .filter(Boolean)
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U"
+
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-6">
-          <CardHeader className="p-0">
-            <CardTitle>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-2">
-                <UserRound className="w-8 h-8 text-primary" />
-                Profile
-              </h1>
+    <main className="mx-auto w-full max-w-5xl space-y-5 p-3 sm:space-y-6 sm:p-5 md:p-6 lg:p-8">
+      {/* Header */}
+      <Card className="overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-r from-primary/10 via-transparent to-transparent shadow-sm">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
+              <UserRound className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
+              Profile
             </CardTitle>
-            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Manage your personal profile and public presence.
+
+            <CardDescription className="mt-2 max-w-2xl text-sm font-medium leading-6 sm:text-base">
+              Manage your professional identity and public presence.
             </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 flex-shrink-0 flex items-center gap-4">
-            {message && (
-              <span className={`text-sm font-medium ${message.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-                {message.text}
-              </span>
-            )}
-            <Button onClick={handleSave} disabled={saving} className="rounded-xl shadow-sm transition-all hover:scale-105 flex items-center gap-2">
-              <Save size={16} /> {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          </CardContent>
+          </div>
+
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full rounded-xl shadow-sm sm:w-auto"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Left Column - Avatar & Basic Info */}
-        <div className="md:col-span-1 space-y-6">
-          <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
-            <CardHeader className="pb-4 text-center">
-              <CardTitle className="text-lg font-bold tracking-tight">Your Avatar</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-6">
-              <Avatar className="h-32 w-32 border-4 border-background shadow-md">
-                <AvatarImage src={avatarUrl } alt="Profile avatar" className="object-cover" />
-                <AvatarFallback className="text-4xl font-bold text-primary bg-primary/10">
-                  {(fullName || "U").substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center space-y-3">
-            <label className="inline-flex items-center gap-2 mx-auto cursor-pointer rounded-xl border border-dashed border-border/60 px-4 py-2 font-medium transition-all hover:bg-muted/50">
-              <Upload size={14} />
-              Change Avatar
+      {/* Status */}
+      {message && (
+        <div
+          role="status"
+          className={`rounded-xl border px-4 py-3 text-sm font-medium ${
+            message.type === "success"
+              ? "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+              : "border-destructive/20 bg-destructive/10 text-destructive"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
 
-                        <Input
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
+      {/* Identity */}
+      <Card className="rounded-2xl border-border/50 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">
+            Professional Identity
+          </CardTitle>
 
-                if (!file) return;
+          <CardDescription>
+            This is how you identify yourself inside ALYMERA.
+          </CardDescription>
+        </CardHeader>
 
-                const url = await uploadImageToSupabase(file);
+        <CardContent>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+            <Avatar className="h-28 w-28 shrink-0 border-4 border-background shadow-md">
+              <AvatarImage
+                src={avatarUrl}
+                alt={fullName || "Profile avatar"}
+                className="object-cover"
+              />
 
-                if (!url || !userId) return;
+              <AvatarFallback className="bg-primary/10 text-3xl font-bold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
-                const { error } = await supabase
-                  .from("profiles")
-                  .update({ avatar_url: url })
-                  .eq("id", userId);
+            <div className="min-w-0 flex-1">
+              <h2 className="break-words text-2xl font-bold tracking-tight">
+                {fullName || "Your Name"}
+              </h2>
 
-                if (error) {
-                  console.error("Avatar profile update error:", error);
-                  return;
-                }
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
+                {location || "Add your location"}
+              </p>
 
-                setAvatarUrl(url);
-              }}
+              <label
+                className={`mt-4 inline-flex cursor-pointer items-center rounded-xl border border-dashed border-border/60 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
+                  isUploading ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploading ? "Uploading..." : "Change Avatar"}
+
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={isUploading}
+                  onChange={handleAvatarChange}
+                />
+              </label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Personal Information */}
+      <Card className="rounded-2xl border-border/50 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">
+            Personal Information
+          </CardTitle>
+
+          <CardDescription>
+            Keep your basic profile information up to date.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                placeholder="Enter your full name"
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                disabled
+                className="rounded-xl bg-muted/30 opacity-70"
+              />
+              <p className="text-xs text-muted-foreground">
+                Managed by your authentication account.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">
+                <span className="inline-flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5" />
+                  Phone
+                </span>
+              </Label>
+
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="Enter your phone number"
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Location
+                </span>
+              </Label>
+
+              <Input
+                id="location"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder="City, Country"
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Professional Links */}
+      <Card className="rounded-2xl border-border/50 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">
+            Professional Links
+          </CardTitle>
+
+          <CardDescription>
+            Add links to your work and professional profiles.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="github">
+              <span className="inline-flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                GitHub
+              </span>
+            </Label>
+
+            <Input
+              id="github"
+              type="url"
+              value={githubUrl}
+              onChange={(event) => setGithubUrl(event.target.value)}
+              placeholder="https://github.com/username"
+              className="rounded-xl"
             />
-            </label>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          </div>
 
-        {/* Right Column - Details */}
-        <div className="md:col-span-2 space-y-6">
-          <Card className="bg-card border border-border/50 shadow-sm rounded-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold tracking-tight">Personal Information</CardTitle>
-              <CardDescription className="font-medium mt-1">Update your details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input 
-                    id="fullName" 
-                    value={fullName} 
-                    onChange={e => setFullName(e.target.value)} 
-                    placeholder="Enter your full name" 
-                    className="rounded-xl bg-muted/20" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
-                    placeholder="Enter your email" 
-                    disabled 
-                    className="rounded-xl bg-muted/20 opacity-70" 
-                  />
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Connected to Auth</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    value={phone} 
-                    onChange={e => setPhone(e.target.value)} 
-                    placeholder="Enter your phone number" 
-                    className="rounded-xl bg-muted/20" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input 
-                    id="location" 
-                    value={location} 
-                    onChange={e => setLocation(e.target.value)} 
-                    placeholder="City, Country" 
-                    className="rounded-xl bg-muted/20" 
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="linkedin">
+              <span className="inline-flex items-center gap-2">
+               <LinkIcon className="h-4 w-4" />
+                LinkedIn
+              </span>
+            </Label>
 
-    </div>
-  );
+            <Input
+              id="linkedin"
+              type="url"
+              value={linkedinUrl}
+              onChange={(event) => setLinkedinUrl(event.target.value)}
+              placeholder="https://linkedin.com/in/username"
+              className="rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="portfolio">
+              <span className="inline-flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                Portfolio
+              </span>
+            </Label>
+
+            <Input
+              id="portfolio"
+              type="url"
+              value={portfolioUrl}
+              onChange={(event) => setPortfolioUrl(event.target.value)}
+              placeholder="https://yourportfolio.com"
+              className="rounded-xl"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </main>
+  )
 }

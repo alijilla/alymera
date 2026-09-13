@@ -1,7 +1,9 @@
 "use client"
-import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase/client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase/client"
+import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
 import {
   Card,
@@ -12,12 +14,13 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Calendar, SparklesIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+
 import {
+  Sparkles,
+  Calendar,
   FolderKanban,
-  CircleCheck,
   Send,
   ArrowRight,
   CalendarCheck,
@@ -25,13 +28,17 @@ import {
   XCircle,
   BriefcaseBusiness,
   CheckCircle2,
-  ListTodo
+  ListTodo,
 } from "lucide-react"
+
+// ======================================================
+// Types
+// ======================================================
 
 type DBProject = {
   id: string
   name: string
-  description: string
+  description: string | null
   status: string
   due_date: string | null
   created_at: string
@@ -57,15 +64,46 @@ type DBApplication = {
 
 type ActivityItem = {
   id: string
-  type: 'project' | 'task' | 'application'
+  type: "project" | "task" | "application"
   title: string
   description: string
   date: Date
 }
 
-  export function getFirstName(name: string) {
-   return name.split(" ")[0];
+// ======================================================
+// Helpers
+// ======================================================
+
+export function getFirstName(name: string) {
+  return name.trim().split(/\s+/)[0] || "there"
 }
+
+function formatDate(date: string | null) {
+  if (!date) return "No date"
+
+  const parsed = new Date(date)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "No date"
+  }
+
+  return parsed.toLocaleDateString()
+}
+
+function formatDateTime(date: Date) {
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date"
+  }
+
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`
+}
+
+// ======================================================
+// Dashboard
+// ======================================================
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<DBProject[]>([])
@@ -73,373 +111,836 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<DBApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [fullname, setFullname] = useState("")
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
+
+  // ====================================================
+  // Load dashboard data
+  // ====================================================
+
   useEffect(() => {
-  async function loadProfile() {
-    const {
-      data: { user },
-      error: authErr,
-    } = await supabase.auth.getUser();
+    let cancelled = false
 
-    if (authErr) {
-      console.error("Auth error:", authErr);
-      return;
-    }
+    async function loadDashboard() {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
 
-    if (!user) return;
+      if (authError) {
+        console.error("Auth error:", authError)
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+        if (!cancelled) {
+          setLoading(false)
+        }
 
-    if (error) {
-      console.error("Profile fetch error:", error);
-      return;
-    }
-
-  
-    setFullname(data?.full_name || "");
-  }
-
-  loadProfile();
-}, []);
-  useEffect(() => {
-    async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: projectsData } = await supabase.from("projects").select("*").eq('user_id', user.id)
-      if (projectsData) setProjects(projectsData)
-
-      // Fetch tasks that belong to the user's projects
-      if (projectsData && projectsData.length > 0) {
-        const projectIds = projectsData.map(p => p.id)
-        const { data: tasksData } = await supabase.from("tasks").select("*").in('project_id', projectIds)
-        if (tasksData) setTasks(tasksData)
+        return
       }
 
-      const { data: appsData } = await supabase.from("applications").select("*").eq('user_id', user.id).order('created_at', { ascending: false })
-      if (appsData) setApplications(appsData)
+      if (!user) {
+        if (!cancelled) {
+          setLoading(false)
+        }
 
+        return
+      }
+
+      // ----------------------------------------------
+      // Profile
+      // ----------------------------------------------
+
+      const { data: profileData, error: profileError } =
+        await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle()
+
+      if (profileError) {
+        console.error("Profile fetch error:", profileError)
+      }
+
+      // ----------------------------------------------
+      // Projects
+      // ----------------------------------------------
+
+      const {
+        data: projectsData,
+        error: projectsError,
+      } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (projectsError) {
+        console.error("Projects fetch error:", projectsError)
+      }
+
+      const userProjects = projectsData ?? []
+
+      // ----------------------------------------------
+      // Tasks
+      // ----------------------------------------------
+
+      let userTasks: DBTask[] = []
+
+      if (userProjects.length > 0) {
+        const projectIds = userProjects.map(
+          (project) => project.id
+        )
+
+        const {
+          data: tasksData,
+          error: tasksError,
+        } = await supabase
+          .from("tasks")
+          .select("*")
+          .in("project_id", projectIds)
+          .order("created_at", { ascending: false })
+
+        if (tasksError) {
+          console.error("Tasks fetch error:", tasksError)
+        }
+
+        userTasks = tasksData ?? []
+      }
+
+      // ----------------------------------------------
+      // Applications
+      // ----------------------------------------------
+
+      const {
+        data: applicationsData,
+        error: applicationsError,
+      } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (applicationsError) {
+        console.error(
+          "Applications fetch error:",
+          applicationsError
+        )
+      }
+
+      if (cancelled) return
+
+      setFullname(profileData?.full_name ?? "")
+      setProjects(userProjects)
+      setTasks(userTasks)
+      setApplications(applicationsData ?? [])
       setLoading(false)
     }
-    fetchData()
+
+    void loadDashboard()
+
+    // ==================================================
+    // Realtime dashboard updates
+    // ==================================================
 
     const channel = supabase
-      .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => fetchData())
+      .channel("dashboard-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tasks",
+        },
+        () => {
+          void loadDashboard()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "projects",
+        },
+        () => {
+          void loadDashboard()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "applications",
+        },
+        () => {
+          void loadDashboard()
+        }
+      )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      void supabase.removeChannel(channel)
     }
   }, [])
 
-  const activeProjects = projects.filter(p => p.status === "In Progress" || p.status === "Planning").length
-  const totalProjects = projects.length
-  
-  const now = new Date()
-  const tasksDueSoon = tasks.filter(t => {
-    if (t.status === "Done") return false
-    if (!t.due_date) return false
-    const due = new Date(t.due_date)
-    const diffTime = due.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays >= 0 && diffDays <= 7 // Due within 7 days
-  }).length
-  
-  const completedTasks = tasks.filter((t) => t.status === "Done").length
+  // ====================================================
+  // Task completion
+  // ====================================================
 
-  // Build Overview Stats
-  const buildStats = [
-    { label: "Active Projects", value: activeProjects, icon: <FolderKanban className="w-5 h-5 text-blue-500" /> },
-    { label: "Tasks Due Soon", value: tasksDueSoon, icon: <ListTodo className="w-5 h-5 text-orange-500" /> },
-    { label: "Completed Tasks", value: completedTasks, icon: <CheckCircle2 className="w-5 h-5 text-green-500" /> },
-    { label: "Total Projects", value: totalProjects, icon: <BriefcaseBusiness className="w-5 h-5 text-purple-500" /> },
-  ]
+  async function handleTaskComplete(
+    taskId: string,
+    checked: boolean
+  ) {
+    if (!checked || updatingTaskId) return
 
-  // Career Stats
-  const appTotal = applications.length
-  const appInterviews = applications.filter(a => a.status === 'Interview').length
-  const appOffers = applications.filter(a => a.status === 'Offer').length
-  const appRejectedGhosted = applications.filter(a => a.status === 'Rejected' || a.status === 'Ghosted').length
+    setUpdatingTaskId(taskId)
 
-  const careerStats = [
-    { label: "Applications", value: appTotal, icon: <Send className="w-5 h-5 text-blue-500" /> },
-    { label: "Interviews", value: appInterviews, icon: <CalendarCheck className="w-5 h-5 text-orange-500" /> },
-    { label: "Offers", value: appOffers, icon: <BadgeCheck className="w-5 h-5 text-green-500" /> },
-    { label: "Rejected / Ghosted", value: appRejectedGhosted, icon: <XCircle className="w-5 h-5 text-muted-foreground" /> },
-  ]
-  
-  // Find first active project
-  const firstActiveProject = projects.find(p => p.status === "In Progress" || p.status === "Planning") || projects[0]
-  const projectTasks = firstActiveProject ? tasks.filter(t => t.project_id === firstActiveProject.id) : []
-  const projectCompletedTasks = projectTasks.filter(t => t.status === "Done").length
-  const projectPercentage = projectTasks.length > 0 ? Math.round((projectCompletedTasks / projectTasks.length) * 100) : 0
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        status: "Done",
+      })
+      .eq("id", taskId)
 
-  const upcomingTasks = tasks
-    .filter(t => t.status !== "Done")
-    .sort((a, b) => new Date(a.due_date || "9999-12-31").getTime() - new Date(b.due_date || "9999-12-31").getTime())
-    .slice(0, 4)
+    if (error) {
+      console.error("Task update error:", error)
+      setUpdatingTaskId(null)
+      return
+    }
 
-  const recentApps = applications.slice(0, 3)
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: "Done",
+            }
+          : task
+      )
+    )
 
-  // Generate Recent Activity Stream
-  const activityStream: ActivityItem[] = [
-    ...projects.map(p => ({
-      id: `p-${p.id}`,
-      type: 'project' as const,
-      title: `Created Project: ${p.name}`,
-      description: `Status: ${p.status}`,
-      date: new Date(p.created_at)
-    })),
-    ...tasks.map(t => ({
-      id: `t-${t.id}`,
-      type: 'task' as const,
-      title: `Task Added: ${t.name}`,
-      description: `Status: ${t.status}`,
-      date: new Date(t.created_at)
-    })),
-    ...applications.map(a => ({
-      id: `a-${a.id}`,
-      type: 'application' as const,
-      title: `Applied to ${a.company || 'Unknown Company'}`,
-      description: `Position: ${a.position} - Status: ${a.status}`,
-      date: new Date(a.created_at)
-    }))
-  ]
-  .sort((a, b) => b.date.getTime() - a.date.getTime())
-  .slice(0, 5)
+    setUpdatingTaskId(null)
+  }
+
+  // ====================================================
+  // Loading
+  // ====================================================
 
   if (loading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>
-  }
- const hour = new Date().getHours()
+    return (
+      <main className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="h-40 animate-pulse rounded-2xl bg-muted/50" />
 
-let greeting = "Good evening"
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-28 animate-pulse rounded-2xl bg-muted/50"
+            />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
+          <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
+          <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
+        </div>
+      </main>
+    )
+  }
+
+  // ====================================================
+  // Greeting
+  // ====================================================
+
+  const hour = new Date().getHours()
+
+  let greeting = "Good evening"
+
   if (hour < 12) {
     greeting = "Good morning"
   } else if (hour < 18) {
     greeting = "Good afternoon"
-  } else {
-    greeting = "Good evening"
   }
 
+  // ====================================================
+  // Build stats
+  // ====================================================
 
+  const activeProjects = projects.filter(
+    (project) =>
+      project.status === "In Progress" ||
+      project.status === "Planning"
+  ).length
+
+  const totalProjects = projects.length
+
+  const now = new Date()
+
+  const tasksDueSoon = tasks.filter((task) => {
+    if (task.status === "Done") return false
+    if (!task.due_date) return false
+
+    const due = new Date(task.due_date)
+
+    if (Number.isNaN(due.getTime())) return false
+
+    const diffTime = due.getTime() - now.getTime()
+    const diffDays = Math.ceil(
+      diffTime / (1000 * 60 * 60 * 24)
+    )
+
+    return diffDays >= 0 && diffDays <= 7
+  }).length
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === "Done"
+  ).length
+
+  const buildStats = [
+    {
+      label: "Active Projects",
+      value: activeProjects,
+      icon: (
+        <FolderKanban className="h-5 w-5 text-blue-500" />
+      ),
+    },
+    {
+      label: "Tasks Due Soon",
+      value: tasksDueSoon,
+      icon: (
+        <ListTodo className="h-5 w-5 text-orange-500" />
+      ),
+    },
+    {
+      label: "Completed Tasks",
+      value: completedTasks,
+      icon: (
+        <CheckCircle2 className="h-5 w-5 text-green-500" />
+      ),
+    },
+    {
+      label: "Total Projects",
+      value: totalProjects,
+      icon: (
+        <BriefcaseBusiness className="h-5 w-5 text-primary" />
+      ),
+    },
+  ]
+
+  // ====================================================
+  // Career stats
+  // ====================================================
+
+  const appTotal = applications.length
+
+  const appInterviews = applications.filter(
+    (application) => application.status === "Interview"
+  ).length
+
+  const appOffers = applications.filter(
+    (application) => application.status === "Offer"
+  ).length
+
+  const appRejectedGhosted = applications.filter(
+    (application) =>
+      application.status === "Rejected" ||
+      application.status === "Ghosted"
+  ).length
+
+  const careerStats = [
+    {
+      label: "Applications",
+      value: appTotal,
+      icon: (
+        <Send className="h-5 w-5 text-blue-500" />
+      ),
+    },
+    {
+      label: "Interviews",
+      value: appInterviews,
+      icon: (
+        <CalendarCheck className="h-5 w-5 text-orange-500" />
+      ),
+    },
+    {
+      label: "Offers",
+      value: appOffers,
+      icon: (
+        <BadgeCheck className="h-5 w-5 text-green-500" />
+      ),
+    },
+    {
+      label: "Rejected / Ghosted",
+      value: appRejectedGhosted,
+      icon: (
+        <XCircle className="h-5 w-5 text-muted-foreground" />
+      ),
+    },
+  ]
+
+  // ====================================================
+  // Active project
+  // ====================================================
+
+  const firstActiveProject =
+    projects.find(
+      (project) =>
+        project.status === "In Progress" ||
+        project.status === "Planning"
+    ) ?? projects[0]
+
+  const projectTasks = firstActiveProject
+    ? tasks.filter(
+        (task) =>
+          task.project_id === firstActiveProject.id
+      )
+    : []
+
+  const projectCompletedTasks = projectTasks.filter(
+    (task) => task.status === "Done"
+  ).length
+
+  const projectPercentage =
+    projectTasks.length > 0
+      ? Math.round(
+          (projectCompletedTasks / projectTasks.length) *
+            100
+        )
+      : 0
+
+  // ====================================================
+  // Upcoming tasks
+  // ====================================================
+
+  const upcomingTasks = tasks
+    .filter((task) => {
+      if (task.status === "Done") return false
+      if (!task.due_date) return false
+
+      const due = new Date(task.due_date)
+
+      if (Number.isNaN(due.getTime())) return false
+
+      const diffTime = due.getTime() - now.getTime()
+      const diffDays = Math.ceil(
+        diffTime / (1000 * 60 * 60 * 24)
+      )
+
+      return diffDays >= 0 && diffDays <= 7
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.due_date!).getTime() -
+        new Date(b.due_date!).getTime()
+    )
+    .slice(0, 4)
+
+  // ====================================================
+  // Recent applications
+  // ====================================================
+
+  const recentApps = applications.slice(0, 3)
+
+  // ====================================================
+  // Recent activity
+  // ====================================================
+
+  const activityStream: ActivityItem[] = [
+    ...projects.map((project) => ({
+      id: `project-${project.id}`,
+      type: "project" as const,
+      title: `Created Project: ${project.name}`,
+      description: `Status: ${project.status}`,
+      date: new Date(project.created_at),
+    })),
+
+    ...tasks.map((task) => ({
+      id: `task-${task.id}`,
+      type: "task" as const,
+      title: `Task Added: ${task.name}`,
+      description: `Status: ${task.status}`,
+      date: new Date(task.created_at),
+    })),
+
+    ...applications.map((application) => ({
+      id: `application-${application.id}`,
+      type: "application" as const,
+      title: `Applied to ${
+        application.company || "Unknown Company"
+      }`,
+      description: `Position: ${application.position} · Status: ${application.status}`,
+      date: new Date(application.created_at),
+    })),
+  ]
+    .filter((activity) => !Number.isNaN(activity.date.getTime()))
+    .sort(
+      (a, b) =>
+        b.date.getTime() - a.date.getTime()
+    )
+    .slice(0, 5)
+
+  // ====================================================
+  // Render
+  // ====================================================
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
- 
-      {/*Greeting */}
-      <Card className="bg-card border border-border/40 shadow-sm bg-gradient-to-r from-purple-500/10 via-transparent to-transparent rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-4">
-          <CardHeader className="p-0">
-            <CardTitle>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {greeting}, <span className="text-purple-600 dark:text-purple-400 bg-clip-text">{getFirstName(fullname)}</span>.
-              </h1>
+    <main className="mx-auto w-full max-w-7xl space-y-6 p-3 sm:space-y-7 sm:p-5 md:p-6 lg:space-y-8 lg:p-8">
+      {/* ==================================================
+          GREETING
+      ================================================== */}
+
+      <Card className="overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-r from-primary/10 via-transparent to-transparent shadow-sm transition-shadow duration-300 hover:shadow-md">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="min-w-0">
+            <CardTitle className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
+              {greeting},{" "}
+              <span className="text-primary">
+                {getFirstName(fullname)}
+              </span>
+              .
             </CardTitle>
-            <CardDescription className="text-base mt-2 text-muted-foreground font-medium">
-              Here is your Workspace Overview.
+
+            <CardDescription className="mt-2 text-sm font-medium leading-6 sm:text-base">
+              Here&apos;s your workspace overview.
             </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 flex-shrink-0">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" asChild>
-              <Link href={"/aly"}>
-                <SparklesIcon className="mr-2 h-5 w-5 text-orange-300" /> Ask Alymera
-              </Link>
-            </Button>
-          </CardContent>
+          </div>
+
+          <Button
+            className="w-full rounded-xl bg-primary px-6 py-5 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:bg-primary/90 sm:w-auto"
+            asChild
+          >
+            <Link href="/aly">
+              <Sparkles className="mr-2 h-5 w-5" />
+              Ask Alymera
+            </Link>
+          </Button>
         </div>
       </Card>
-      {/* BUILD STATS */}
-      <div className="space-y-4">
-       
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+
+      {/* ==================================================
+          BUILD STATS
+      ================================================== */}
+
+      <section aria-label="Build statistics">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 md:gap-6">
           {buildStats.map((stat) => (
-             <Card key={stat.label} className="bg-card border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 rounded-2xl">
-             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
-               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                 {stat.label}
-               </CardTitle>
-               <div className="p-2 bg-muted/50 rounded-xl">
-                 {stat.icon}
-               </div>
-             </CardHeader>
-             <CardContent className="px-5 pb-5 pt-0">
-               <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
-             </CardContent>
-           </Card>
+            <Card
+              key={stat.label}
+              className="rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2 sm:p-5">
+                <CardTitle className="max-w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:max-w-none sm:text-xs">
+                  {stat.label}
+                </CardTitle>
+
+                <div className="shrink-0 rounded-xl bg-muted/50 p-2">
+                  {stat.icon}
+                </div>
+              </CardHeader>
+
+              <CardContent className="px-4 pb-4 pt-0 sm:px-5 sm:pb-5">
+                <div className="text-2xl font-bold tracking-tight sm:text-3xl">
+                  {stat.value}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Active Project Card */}
-        <Card className="bg-card shadow-sm flex flex-col border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
+      {/* ==================================================
+          ACTIVE PROJECT + TASKS
+      ================================================== */}
+
+      <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
+        {/* Active Project */}
+
+        <Card className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:border-border hover:shadow-md">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold tracking-tight">Active Project</CardTitle>
-            <CardDescription className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Active Project
+            </CardTitle>
+
+            <CardDescription className="text-sm font-medium">
               Your primary focus right now
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 flex-1 px-4 md:px-6">
+
+          <CardContent className="flex-1 space-y-5 px-4 sm:px-6">
             {firstActiveProject ? (
               <>
-                <div className="flex items-center gap-4 group">
-                  <div className="p-3 bg-muted/30 rounded-xl border border-border/40 group-hover:border-primary/30 transition-colors">
-                    <FolderKanban className="w-6 h-6 text-primary" />
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                  <div className="shrink-0 rounded-xl border border-border/40 bg-muted/30 p-3">
+                    <FolderKanban className="h-6 w-6 text-primary" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{firstActiveProject.name}</h3>
-                    <p className="text-sm font-medium text-muted-foreground line-clamp-1">{firstActiveProject.description || "No description provided."}</p>
+
+                  <div className="min-w-0">
+                    <h3 className="truncate text-lg font-semibold">
+                      {firstActiveProject.name}
+                    </h3>
+
+                    <p className="line-clamp-2 text-sm font-medium text-muted-foreground">
+                      {firstActiveProject.description ||
+                        "No description provided."}
+                    </p>
                   </div>
                 </div>
 
-                <div className="space-y-2 mt-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground font-medium">Progress</span>
-                    <span className="font-bold text-primary">{projectPercentage}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-muted-foreground">
+                      Progress
+                    </span>
+
+                    <span className="font-bold text-primary">
+                      {projectPercentage}%
+                    </span>
                   </div>
-                  <Progress value={projectPercentage} className="h-2 rounded-full" />
-                  <p className="text-xs text-muted-foreground text-right font-medium">{projectCompletedTasks}/{projectTasks.length} tasks completed</p>
+
+                  <Progress
+                    value={projectPercentage}
+                    className="h-2 rounded-full"
+                  />
+
+                  <p className="text-right text-xs font-medium text-muted-foreground">
+                    {projectCompletedTasks}/
+                    {projectTasks.length} tasks completed
+                  </p>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full">
-                <p className="text-sm font-medium text-muted-foreground">No projects yet</p>
-              </div>
+              <EmptyState text="No projects yet" />
             )}
           </CardContent>
-          <CardFooter className="flex items-center justify-between border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl">
-            <Link href="/build/" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-              View all projects <ArrowRight className="ml-2 w-4 h-4" />
+
+          <CardFooter className="flex flex-col items-start gap-3 rounded-b-2xl border-t border-border/50 bg-muted/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <Link
+              href="/build"
+              className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+            >
+              View all projects
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
+
             {firstActiveProject?.due_date && (
-            <div className="flex items-center text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-3 py-1.5 rounded-full">
-              <Calendar className="w-3.5 h-3.5 mr-2 text-primary" />
-              {new Date(firstActiveProject.due_date).toLocaleDateString()}
-            </div>
+              <div className="flex items-center rounded-full border border-border/50 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+                <Calendar className="mr-2 h-3.5 w-3.5 text-primary" />
+                {formatDate(firstActiveProject.due_date)}
+              </div>
             )}
           </CardFooter>
         </Card>
 
         {/* Tasks Due Soon */}
-        <Card className="bg-card shadow-sm flex flex-col border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
+
+        <Card className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:border-border hover:shadow-md">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <CardTitle className="text-xl font-bold tracking-tight">
               Tasks Due Soon
             </CardTitle>
+
+            <CardDescription className="text-sm font-medium">
+              Tasks due within the next 7 days
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 flex-1 px-4 md:px-6">
-            {upcomingTasks.length > 0 ? upcomingTasks.map((t) => (
-              <div key={t.id} className="flex items-center gap-4 group p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Checkbox id={t.id} className="rounded-full w-5 h-5 border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                  <Label htmlFor={t.id} className="font-medium cursor-pointer group-hover:text-primary transition-colors select-none">
-                    {t.name}
+
+          <CardContent className="flex-1 space-y-2 px-4 sm:px-6">
+            {upcomingTasks.length > 0 ? (
+              upcomingTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-muted/50"
+                >
+                  <Checkbox
+                    id={`task-${task.id}`}
+                    checked={task.status === "Done"}
+                    disabled={
+                      task.status === "Done" ||
+                      updatingTaskId === task.id
+                    }
+                    onCheckedChange={(checked) =>
+                      handleTaskComplete(
+                        task.id,
+                        checked === true
+                      )
+                    }
+                    className="h-5 w-5 shrink-0 rounded-full"
+                  />
+
+                  <Label
+                    htmlFor={`task-${task.id}`}
+                    className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium"
+                  >
+                    {task.name}
                   </Label>
+
+                  <span className="shrink-0 rounded-md border border-border/50 bg-background px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                    {formatDate(task.due_date)}
+                  </span>
                 </div>
-                <div className="flex-1 border-b border-dashed border-muted-foreground/20 mx-2" />
-                <span className="text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-2.5 py-1 rounded-md group-hover:border-primary/30 transition-colors">
-                  {t.due_date ? new Date(t.due_date).toLocaleDateString() : "No date"}
-                </span>
-              </div>
-            )) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full">
-                <p className="text-sm font-medium text-muted-foreground">No upcoming tasks</p>
-              </div>
+              ))
+            ) : (
+              <EmptyState text="No tasks due within 7 days" />
             )}
           </CardContent>
-          <CardFooter className="border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl">
-            <Link href="/build/kanban" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-              View all tasks <ArrowRight className="ml-2 w-4 h-4" />
+
+          <CardFooter className="rounded-b-2xl border-t border-border/50 bg-muted/10 px-4 py-4 sm:px-6">
+            <Link
+              href="/build/kanban"
+              className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+            >
+              View all tasks
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </CardFooter>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      {/* ==================================================
+          ACTIVITY + CAREER
+      ================================================== */}
+
+      <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
-        <Card className="bg-card shadow-sm flex flex-col border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
+
+        <Card className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:border-border hover:shadow-md">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <CardTitle className="text-xl font-bold tracking-tight">
               Recent Activity
             </CardTitle>
+
+            <CardDescription className="text-sm font-medium">
+              Your latest workspace activity
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 flex-1 px-4 md:px-6 overflow-y-auto">
-            {activityStream.length > 0 ? activityStream.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-4">
-                <div className="mt-1 p-2 bg-muted/30 rounded-lg">
-                  {activity.type === 'project' && <FolderKanban className="w-4 h-4 text-purple-500" />}
-                  {activity.type === 'task' && <ListTodo className="w-4 h-4 text-orange-500" />}
-                  {activity.type === 'application' && <Send className="w-4 h-4 text-blue-500" />}
+
+          <CardContent className="flex-1 space-y-4 px-4 sm:px-6">
+            {activityStream.length > 0 ? (
+              activityStream.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 sm:gap-4"
+                >
+                  <div className="mt-1 shrink-0 rounded-lg bg-muted/30 p-2">
+                    {activity.type === "project" && (
+                      <FolderKanban className="h-4 w-4 text-primary" />
+                    )}
+
+                    {activity.type === "task" && (
+                      <ListTodo className="h-4 w-4 text-orange-500" />
+                    )}
+
+                    {activity.type === "application" && (
+                      <Send className="h-4 w-4 text-blue-500" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <h4 className="break-words text-sm font-semibold">
+                      {activity.title}
+                    </h4>
+
+                    <p className="break-words text-xs text-muted-foreground">
+                      {activity.description}
+                    </p>
+
+                    <p className="mt-1 text-[10px] text-muted-foreground/60">
+                      {formatDateTime(activity.date)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">{activity.title}</h4>
-                  <p className="text-xs text-muted-foreground">{activity.description}</p>
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">{activity.date.toLocaleDateString()} {activity.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              </div>
-            )) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-border/40 rounded-xl h-full">
-                <p className="text-sm font-medium text-muted-foreground">No recent activity</p>
-              </div>
+              ))
+            ) : (
+              <EmptyState text="No recent activity" />
             )}
           </CardContent>
-          <CardFooter className="border-t border-border/50 pt-4 pb-4 px-6 bg-muted/10 rounded-b-2xl">
-            <Link href="/dashboard" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-              View all activity <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </CardFooter>
         </Card>
 
         {/* Career Snapshot */}
-        <Card className="bg-card shadow-sm border border-border/50 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-border">
+
+        <Card className="rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:border-border hover:shadow-md">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold tracking-tight">Career Snapshot</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight">
+              Career Snapshot
+            </CardTitle>
+
+            <CardDescription className="text-sm font-medium">
+              Keep track of your job search progress
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 px-4 md:px-6">
+
+          <CardContent className="space-y-6 px-4 sm:px-6">
+            {/* Career Stats */}
+
             <div className="grid grid-cols-2 gap-3">
               {careerStats.map((stat) => (
-                <div key={stat.label} className="p-3 bg-muted/20 border border-border/40 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={stat.label}
+                  className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border/40 bg-muted/20 p-3"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
                     {stat.icon}
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">{stat.label}</span>
+
+                    <span className="truncate text-[10px] font-semibold uppercase text-muted-foreground sm:text-xs">
+                      {stat.label}
+                    </span>
                   </div>
-                  <span className="font-bold text-lg">{stat.value}</span>
+
+                  <span className="shrink-0 text-lg font-bold">
+                    {stat.value}
+                  </span>
                 </div>
               ))}
             </div>
 
             {/* Recent Applications */}
+
             <div className="border-t border-border/50 pt-6">
               <div className="mb-4 flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="rounded-lg bg-primary/10 p-2">
                   <Send className="h-4 w-4 text-primary" />
                 </div>
-                <span className="font-bold">Recent Applications</span>
+
+                <span className="font-bold">
+                  Recent Applications
+                </span>
               </div>
 
               <div className="space-y-2">
-                {recentApps.length > 0 ? recentApps.map((app) => (
-                  <div key={app.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
-                    <span className="text-sm font-medium">{app.position}</span>
-                    <span className="text-xs font-medium text-muted-foreground bg-background border border-border/50 shadow-sm px-2.5 py-1 rounded-md">
-                      {app.status}
-                    </span>
-                  </div>
-                )) : (
-                  <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-xl border-border/50">No applications yet</p>
+                {recentApps.length > 0 ? (
+                  recentApps.map((application) => (
+                    <div
+                      key={application.id}
+                      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 p-3 transition-colors hover:bg-muted/30"
+                    >
+                      <span className="min-w-0 truncate text-sm font-medium">
+                        {application.position}
+                      </span>
+
+                      <span className="shrink-0 rounded-md border border-border/50 bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                        {application.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-xl border border-dashed border-border/50 py-4 text-center text-sm text-muted-foreground">
+                    No applications yet
+                  </p>
                 )}
               </div>
 
               <div className="mt-4 flex justify-end">
-                <Link href="/career/applications" className="text-sm font-semibold text-muted-foreground hover:text-primary flex items-center transition-colors">
-                  View Applications <ArrowRight className="ml-2 w-4 h-4" />
+                <Link
+                  href="/career/applications"
+                  className="flex items-center text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+                >
+                  View Applications
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -447,25 +948,62 @@ let greeting = "Good evening"
         </Card>
       </div>
 
-      {/* AI Insight */}
-      <Card className="bg-card shadow-md border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-transparent rounded-2xl overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 gap-6">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <SparklesIcon className="h-6 w-6 text-orange-400" />
-              Alymera AI
-            </h2>
-            <p className="text-muted-foreground font-medium">
-              AI Insight coming soon. Connect your Resume and track more applications to let Alymera AI suggest your next career move.
+      {/* ==================================================
+          ALYMERA AI
+      ================================================== */}
+
+      <Card className="overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-md">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="min-w-0 space-y-3">
+               <div className="flex items-center gap-4">
+              <div className="h-16 w-16 shrink-0">
+                <Image
+                  src="/img/mascot.png"
+                  alt="Alymera AI mascot"
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+                Alymera AI
+              </h2>
+            </div>
+
+            <p className="max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
+              Get help deciding what to work on next, organize
+              your projects and tasks, and manage your career
+              progress with AI.
             </p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 rounded-xl px-6 py-5 shadow-lg shadow-purple-500/20 transition-all hover:scale-105" asChild>
-            <Link href={"/career/resume/"}>
-              Improve my resume <SparklesIcon className="ml-2 h-4 w-4 text-orange-300" />
+
+          <Button
+            className="w-full shrink-0 rounded-xl bg-primary px-6 py-5 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] hover:bg-primary/90 sm:w-auto"
+            asChild
+          >
+            <Link href="/aly">
+              Ask Alymera
+              <Sparkles className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
       </Card>
+
+    </main>
+  )
+}
+
+// ======================================================
+// Empty State
+// ======================================================
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="flex min-h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/40 px-4 py-8 text-center">
+      <p className="text-sm font-medium text-muted-foreground">
+        {text}
+      </p>
     </div>
   )
 }

@@ -1,619 +1,1704 @@
 "use client"
-import { useState } from "react"
+
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
+import { supabase } from "@/lib/supabase/client"
 
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation"
+
 import {
   Message,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message"
+
 import {
   PromptInput,
   PromptInputTextarea,
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input"
+
 import { Button } from "@/components/ui/button"
-import { Sparkles, FileSearch, CheckCircle2, BookmarkPlus, Map } from "lucide-react"
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
+import {
+  Sparkles,
+  FileSearch,
+  CheckCircle2,
+  BookmarkPlus,
+  Map,
+  Briefcase,
+  FileText,
+  Brain,
+  ArrowLeft,
+  X,
+} from "lucide-react"
 
-import type {
-  ResumeAnalysis,
-  JobMatch,
-  Interview,
-} from "@/lib/ai/schemas"
+type CareerFeature =
+  | "resume-analysis"
+  | "job-matching"
+  | "interview"
+  | null
+
+type InterviewMode =
+  | "choose"
+  | "application"
+  | "job-description"
+  | null
+
+type Application = {
+  id: string
+  company: string
+  position: string
+  location: string | null
+  date_applied: string | null
+  status: string
+  job_description: string | null
+  job_url: string | null
+  notes: string | null
+  created_at: string
+}
+
 export function CareerAssistant() {
+  // --------------------------------------------------
+  // Career Feature State
+  // --------------------------------------------------
 
-  const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null)
-const [isAnalyzingResume, setIsAnalyzingResume] = useState(false)
-const [resumeAnalysisError, setResumeAnalysisError] = useState<string | null>(null)
+  const [activeFeature, setActiveFeature] =
+    useState<CareerFeature>(null)
+
+  // --------------------------------------------------
+  // Interview State
+  // --------------------------------------------------
+
+  const [interviewMode, setInterviewMode] =
+    useState<InterviewMode>(null)
+
+  const [applications, setApplications] =
+    useState<Application[]>([])
+
+  const [selectedApplication, setSelectedApplication] =
+    useState<Application | null>(null)
+
+  const [loadingApplications, setLoadingApplications] =
+    useState(false)
+
+  // --------------------------------------------------
+  // Chat State
+  // --------------------------------------------------
 
   const [prompt, setPrompt] = useState("")
-const [jobDescription, setJobDescription] = useState("")
 
+  const searchParams = useSearchParams()
 
-const [jobMatch, setJobMatch] = useState<JobMatch | null>(null)
-const [isMatchingJob, setIsMatchingJob] = useState(false)
-const [jobMatchError, setJobMatchError] = useState<string | null>(null)
+  const existingConversationId =
+    searchParams.get("conversationId")
 
-const [interview, setInterview] = useState<Interview | null>(null)
-const [isGeneratingInterview, setIsGeneratingInterview] = useState(false)
-const [interviewError, setInterviewError] = useState<string | null>(null)
+  /*
+   * This stores the conversation ID created by the API
+   * when starting a brand-new conversation.
+   */
+  const [createdConversationId, setCreatedConversationId] =
+    useState<string | null>(null)
 
+  const conversationId =
+    existingConversationId ??
+    createdConversationId
 
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    stop,
+    setMessages,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/alymera",
 
-  const analyzeResume = async () => {
-  setIsAnalyzingResume(true)
-  setResumeAnalysisError(null)
-
-  try {
-    const response = await fetch("/api/alymera", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: [],
+      body: {
         assistant: "career",
-        demo: false,
-        feature: "resume-analysis",
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error("Failed to analyze resume.")
-    }
-
-    const data = await response.json()
-
-    setResumeAnalysis(data)
-  } catch (error) {
-    console.error(error)
-    setResumeAnalysisError(
-      "Unable to analyze your resume. Please try again."
-    )
-  } finally {
-    setIsAnalyzingResume(false)
-  }
-}
-
-const jobMatching = async () => {
-  setIsMatchingJob(true)
-  setJobMatchError(null)
-
-  try {
-    const response = await fetch("/api/alymera", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+        conversationId,
       },
-      body: JSON.stringify({
-        messages: [],
-        assistant: "career",
-        demo: false,
-        feature: "job-matching",
-        jobDescription,
-      }),
-    })
+    }),
 
-    if (!response.ok) {
-      throw new Error("Failed to match job.")
-    }
-
-    const data = await response.json()
-
-    setJobMatch(data)
-  } catch (error) {
-    console.error(error)
-    setJobMatchError(
-      "Unable to analyze this job description. Please try again."
-    )
-  } finally {
-    setIsMatchingJob(false)
-  }
-}
-
-const interviewing = async () => {
-  setIsGeneratingInterview(true)
-  setInterviewError(null)
-
-  try {
-    const response = await fetch("/api/alymera", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: [],
-        assistant: "career",
-        demo: false,
-        feature: "interview",
-        jobDescription,
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error("Failed to generate interview.")
-    }
-
-    const data = await response.json()
-
-    setInterview(data)
-  } catch (error) {
-    console.error(error)
-    setInterviewError(
-      "Unable to generate interview questions. Please try again."
-    )
-  } finally {
-    setIsGeneratingInterview(false)
-  }
-}
-
-
-
-const {
-  messages,
-  sendMessage,
-  status,
-  error,
-  stop,
-} = useChat({
-  transport: new DefaultChatTransport({
-    api: "/api/alymera",
-    body: {
-      assistant: "career",
+    onData: (dataPart) => {
+      if (
+        dataPart.type ===
+        "data-conversationId"
+      ) {
+        if (
+          typeof dataPart.data === "string"
+        ) {
+          setCreatedConversationId(
+            dataPart.data
+          )
+        }
+      }
     },
-  }),
-})
+  })
 
-  // Chat status
-  const isSubmitted = status === "submitted"
-  const isStreaming = status === "streaming"
-  const isLoading = isSubmitted || isStreaming
+  useEffect(() => {
+  if (error) {
+    console.error("CHAT ERROR:", error)
+    console.error("CHAT ERROR MESSAGE:", error.message)
+  }
+}, [error])
+  // --------------------------------------------------
+  // Load Existing Conversation
+  // --------------------------------------------------
 
-  const handlePromptClick = (text: string) => {
-    setPrompt(text)
+  useEffect(() => {
+    if (!existingConversationId) {
+      return
+    }
+
+    async function loadConversation() {
+      const { data, error } =
+        await supabase
+          .from("messages")
+          .select(
+            "id, role, content, type"
+          )
+          .eq(
+            "conversation_id",
+            existingConversationId
+          )
+          .order("created_at", {
+            ascending: true,
+          })
+
+      if (error) {
+        console.error(
+          "Failed to load conversation:",
+          error
+        )
+
+        return
+      }
+
+      const restoredMessages =
+        (data ?? []).map(
+          (message) => ({
+            id: message.id,
+
+            role: message.role as
+              | "user"
+              | "assistant",
+
+            parts: [
+              {
+                type: "text" as const,
+                text: message.content,
+              },
+            ],
+          })
+        )
+
+      setMessages(
+        restoredMessages
+      )
+    }
+
+    loadConversation()
+  }, [
+    existingConversationId,
+    setMessages,
+  ])
+
+  // --------------------------------------------------
+  // Loading State
+  // --------------------------------------------------
+
+  const isSubmitted =
+    status === "submitted"
+
+  const isStreaming =
+    status === "streaming"
+
+  const isLoading =
+    isSubmitted ||
+    isStreaming
+
+  // --------------------------------------------------
+  // Input Placeholder
+  // --------------------------------------------------
+
+  const getInputPlaceholder = () => {
+    if (
+      activeFeature ===
+      "job-matching"
+    ) {
+      return "Paste the job description here..."
+    }
+
+    if (
+      activeFeature ===
+      "interview"
+    ) {
+      if (
+        interviewMode ===
+        "job-description"
+      ) {
+        return "Paste the job description here..."
+      }
+
+      return "Answer the interview question..."
+    }
+
+    return "Ask Career Assistant..."
   }
 
-  const handleSubmit = () => {
-    if (!prompt.trim() || isLoading) return
+  // --------------------------------------------------
+  // Load Applications
+  // --------------------------------------------------
 
-    sendMessage({
-      text: prompt.trim(),
-    })
+  const loadApplications =
+    async () => {
+      setLoadingApplications(true)
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("applications")
+        .select(
+            "id, company, position, location, date_applied, status, job_description, job_url, notes, created_at"
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        )
+
+      if (error) {
+        console.error(
+          "Failed to load applications:",
+          error
+        )
+
+        setLoadingApplications(
+          false
+        )
+
+        return
+      }
+
+      setApplications(
+        data ?? []
+      )
+
+      setLoadingApplications(false)
+    }
+
+  // --------------------------------------------------
+  // Normal Chat
+  // --------------------------------------------------
+
+  const handleSubmit = (
+    text?: string
+  ) => {
+    const message =
+      (text ?? prompt).trim()
+
+    if (
+      !message ||
+      isLoading
+    ) {
+      return
+    }
+
+    /*
+     * ----------------------------------------------
+     * Job Matching
+     * ----------------------------------------------
+     */
+
+    if (
+      activeFeature ===
+      "job-matching"
+    ) {
+      sendMessage(
+        {
+          text: message,
+        },
+        {
+          body: {
+            assistant: "career",
+            conversationId,
+            feature:
+              "job-matching",
+            jobDescription:
+              message,
+          },
+        }
+      )
+
+      setPrompt("")
+      setActiveFeature(null)
+
+      return
+    }
+
+    /*
+     * ----------------------------------------------
+     * Interview - Paste JD
+     * ----------------------------------------------
+     */
+
+    if (
+      activeFeature ===
+        "interview" &&
+      interviewMode ===
+        "job-description"
+    ) {
+      sendMessage(
+        {
+          text:
+            "Start an interview for this job. Ask me one question at a time.\n\nJob Description:\n" +
+            message,
+        },
+        {
+          body: {
+            assistant: "career",
+            conversationId,
+            feature:
+              "interview",
+            jobDescription:
+              message,
+          },
+        }
+      )
+
+      setPrompt("")
+      setInterviewMode(null)
+
+      return
+    }
+
+    /*
+     * ----------------------------------------------
+     * Interview Answer
+     * ----------------------------------------------
+     */
+
+    if (
+      activeFeature ===
+      "interview"
+    ) {
+      sendMessage(
+        {
+          text: message,
+        },
+        {
+          body: {
+            assistant: "career",
+            conversationId,
+            feature:
+              "interview",
+          },
+        }
+      )
+
+      setPrompt("")
+
+      return
+    }
+
+
+   
+    /*
+     * ----------------------------------------------
+     * Normal Career Chat
+     * ----------------------------------------------
+     */
+
+    setActiveFeature(null)
+
+    sendMessage(
+      {
+        text: message,
+      },
+      {
+        body: {
+          assistant: "career",
+          conversationId,
+          feature: "chat",
+        },
+      }
+    )
 
     setPrompt("")
   }
 
+  const handlePromptClick = (
+    text: string
+  ) => {
+    handleSubmit(text)
+  }
+
+  // --------------------------------------------------
+  // Resume Analysis
+  // --------------------------------------------------
+
+  const analyzeResume = () => {
+    if (isLoading) {
+      return
+    }
+
+    setActiveFeature(
+      "resume-analysis"
+    )
+
+    setInterviewMode(null)
+
+    sendMessage(
+      {
+        text: "Analyze my saved resume.",
+      },
+      {
+        body: {
+          assistant: "career",
+          conversationId,
+          feature:
+            "resume-analysis",
+        },
+      }
+    )
+  }
+
+  // --------------------------------------------------
+  // Job Matching
+  // --------------------------------------------------
+
+  const startJobMatching = () => {
+    if (isLoading) {
+      return
+    }
+
+    setActiveFeature(
+      "job-matching"
+    )
+
+    setInterviewMode(null)
+
+    setPrompt("")
+  }
+
+  // --------------------------------------------------
+  // Interview Preparation
+  // --------------------------------------------------
+
+  const startInterview = () => {
+    if (isLoading) {
+      return
+    }
+
+    /*
+     * Don't immediately send a message.
+     *
+     * First let the user choose:
+     *
+     * 1. Application Tracker
+     * 2. Paste Job Description
+     * 3. General Practice
+     */
+
+    setActiveFeature(
+      "interview"
+    )
+
+    setInterviewMode(
+      "choose"
+    )
+
+    setSelectedApplication(
+      null
+    )
+
+    setPrompt("")
+
+    loadApplications()
+  }
+
+  // --------------------------------------------------
+  // Select Application
+  // --------------------------------------------------
+
+  const selectApplication = (
+    application: Application
+  ) => {
+    setSelectedApplication(
+      application
+    )
+
+    setInterviewMode(
+      "application"
+    )
+  }
+
+  // --------------------------------------------------
+  // Start Application Interview
+  // --------------------------------------------------
+
+  const startApplicationInterview =
+    () => {
+      if (
+        isLoading ||
+        !selectedApplication
+      ) {
+        return
+      }
+
+      const jobDescription =
+        selectedApplication.job_description?.trim()
+
+      /*
+       * If there is no JD saved, we can still start
+       * a general interview using the application
+       * context. The API will handle this later.
+       */
+
+      sendMessage(
+        {
+          text:
+            `Start an interview for my application.
+
+Job Title:
+${selectedApplication.position ?? "Unknown"}
+
+Company:
+${selectedApplication.company ?? "Unknown"}
+
+${
+  jobDescription
+    ? `Job Description:
+${jobDescription}`
+    : "No job description is available for this application."
+}
+
+Ask me ONE interview question at a time.`,
+        },
+        {
+          body: {
+            assistant: "career",
+            conversationId,
+            feature:
+              "interview",
+            applicationId:
+              selectedApplication.id,
+            jobDescription:
+              jobDescription ||
+              undefined,
+          },
+        }
+      )
+
+      setInterviewMode(null)
+      setSelectedApplication(null)
+      setPrompt("")
+    }
+
+  // --------------------------------------------------
+  // General Interview
+  // --------------------------------------------------
+
+  const startGeneralInterview =
+    () => {
+      if (isLoading) {
+        return
+      }
+
+      sendMessage(
+        {
+          text:
+            "Start a general interview practice session based on my saved resume. Ask me ONE question at a time and wait for my answer before continuing.",
+        },
+        {
+          body: {
+            assistant: "career",
+            conversationId,
+            feature:
+              "interview",
+          },
+        }
+      )
+
+      setInterviewMode(null)
+      setPrompt("")
+    }
+
+  // --------------------------------------------------
+  // Back To Interview Choices
+  // --------------------------------------------------
+
+  const backToInterviewChoices =
+    () => {
+      if (isLoading) {
+        return
+      }
+
+      setInterviewMode(
+        "choose"
+      )
+
+      setSelectedApplication(
+        null
+      )
+
+      setPrompt("")
+    }
+
+  // --------------------------------------------------
+  // Cancel Interview Setup
+  // --------------------------------------------------
+
+  const cancelInterview = () => {
+    if (isLoading) {
+      return
+    }
+
+    setActiveFeature(null)
+
+    setInterviewMode(null)
+
+    setSelectedApplication(
+      null
+    )
+
+    setPrompt("")
+  }
+
+
+
+   const handleEndInterview = async () => {
+  stop()
+
+  if (conversationId) {
+    const { error } = await supabase
+      .from("conversations")
+      .update({
+        interview_status: "ended",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversationId)
+
+    if (error) {
+      console.error(
+        "Failed to end interview:",
+        error
+      )
+    }
+  }
+
+  setActiveFeature(null)
+  setInterviewMode(null)
+  setPrompt("")
+}
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
+
   return (
-    <div className="flex h-[700px] flex-col rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden transition-all duration-300">
-      <div className="border-b border-border/50 px-6 py-5 bg-gradient-to-r from-blue-500/5 via-transparent to-transparent">
-        <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-blue-500" /> Career Assistant
-        </h2>
-        <p className="text-sm font-medium text-muted-foreground mt-1">
-          Analyze jobs, manage applications, and keep your job search organized.
-        </p>
+    <div className="flex h-[calc(100dvh-7rem)] min-h-[620px] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
+
+      {/* ==================================================
+          HEADER
+      ================================================== */}
+
+      <div className="shrink-0 border-b border-border/50 bg-gradient-to-r from-primary/10 via-transparent to-transparent px-4 py-3 sm:px-5 sm:py-4">
+
+        <div className="flex min-w-0 items-center justify-between gap-3">
+
+          <div className="min-w-0">
+
+            <h2 className="flex items-center gap-2 text-base font-bold text-foreground sm:text-lg">
+
+              <Sparkles className="h-5 w-5 shrink-0 text-primary" />
+
+              <span className="truncate">
+                Career Assistant
+              </span>
+
+            </h2>
+
+            <p className="mt-1 hidden text-xs font-medium leading-relaxed text-muted-foreground sm:block sm:text-sm">
+              Analyze jobs, manage applications,
+              and prepare for real interviews.
+            </p>
+
+          </div>
+
+          <div className="hidden shrink-0 rounded-lg border border-border/50 bg-background/60 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground lg:block">
+            GPT-OSS 120B · Groq
+          </div>
+
+        </div>
+
       </div>
 
-      <Conversation className="min-h-0 flex-1 bg-background/50">
-        <ConversationContent className="p-4 md:p-6 space-y-4">
-          {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 text-center w-full max-w-2xl mx-auto">
-              <div className="bg-blue-500/10 p-4 rounded-full mb-4 shadow-sm border border-blue-500/20">
-                <span className="text-4xl block animate-bounce">🤖</span>
-              </div>
-              <h3 className="text-xl font-bold text-foreground">How can I help your career?</h3>
-              <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                I can analyze job descriptions, track your applications, and recommend the next steps in your career journey.
-              </p>
-              
-              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
-                 onClick={() =>
-                                handlePromptClick("Analyze this job description and give me a match score: ")
-                            }>
-                   <FileSearch className="w-5 h-5 text-blue-400 mr-3 shrink-0" />
-                   <div>
-                     <div className="font-semibold text-sm text-foreground">Analyze a Job</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">Paste a description to get a match score</div>
-                   </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
-                 onClick={() =>
-                                handlePromptClick("Add this job to my tracker: ")
-                            }>
-                   <BookmarkPlus className="w-5 h-5 text-green-500 mr-3 shrink-0" />
-                   <div>
-                     <div className="font-semibold text-sm text-foreground">Add to Applications</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">&rdquo;Add this job to my tracker&rdquo;</div>
-                   </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left"
-                 onClick={() =>
-                                handlePromptClick("Mark [Company] as [Status]")
-                            }>
-                   <CheckCircle2 className="w-5 h-5 text-purple-400 mr-3 shrink-0" />
-                   <div>
-                     <div className="font-semibold text-sm text-foreground">Update Status</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">&rdquo;Mark XYZ Corp as Interview&rdquo;</div>
-                   </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-3 px-4 rounded-xl justify-start bg-card hover:bg-muted/50 border-border/50 hover:border-primary/30 transition-all text-left" onClick={() =>
-                                handlePromptClick("Based on my current applications and skills, what should my next career step be?")
-                            }>
-                   <Map className="w-5 h-5 text-orange-400 mr-3 shrink-0" />
-                   <div>
-                     <div className="font-semibold text-sm text-foreground">Find Next Step</div>
-                     <div className="text-xs text-muted-foreground mt-0.5">Get career path suggestions</div>
-                   </div>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => (
-            <Message
-              from={message.role}
-              key={message.id}
-            >
-              <MessageContent>
-                {message.parts.map((part, index) =>
-                  part.type === "text" ? (
-                    <MessageResponse key={index}>
-                      {part.text}
-                    </MessageResponse>
-                  ) : null
-                )}
-              </MessageContent>
-            </Message>
-            
-          ))
-     
-          
-          )}
+      {/* ==================================================
+          CONVERSATION
+      ================================================== */}
 
-          {/* THINKING INDICATOR */}
-        
-            {status === "submitted" && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
-        
-                  <Sparkles className="h-4 w-4 text-primary" />
-        
-                  <span className="text-sm text-muted-foreground">
-                    Alymera is thinking
-                  </span>
-        
-                  <span className="flex gap-1">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
-                  </span>
-        
+      <Conversation className="min-h-0 flex-1 bg-background/50">
+
+        <ConversationContent className="mx-auto w-full max-w-5xl space-y-5 p-3 sm:p-4 md:p-6 lg:p-8">
+
+          {/* ==================================================
+              EMPTY STATE
+          ================================================== */}
+
+          {messages.length === 0 &&
+            !activeFeature && (
+              <div className="flex min-h-full w-full flex-col items-center justify-center px-2 py-8 text-center sm:py-12">
+
+                <div className="mb-4 rounded-full border border-primary/20 bg-primary/10 p-4 shadow-sm">
+
+                  <Briefcase className="h-5 w-5" />
+
+                </div>
+
+                <h3 className="text-lg font-bold text-foreground sm:text-xl">
+                  How can I help your career?
+                </h3>
+
+                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                  I can analyze your resume,
+                  evaluate job opportunities,
+                  manage applications, and
+                  practice interviews with you.
+                </p>
+
+                <div className="mt-7 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
+
+                  {/* Analyze Job */}
+
+                  <Button
+                    variant="outline"
+                    className="h-auto min-h-[76px] min-w-0 justify-start rounded-xl border-border/50 bg-card px-4 py-3 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                    onClick={() =>
+                      startJobMatching()
+                    }
+                  >
+
+                    <FileSearch className="mr-3 h-5 w-5 shrink-0 text-primary" />
+
+                    <div className="min-w-0">
+
+                      <div className="text-sm font-semibold text-foreground">
+                        Analyze a Job
+                      </div>
+
+                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Check whether a job is worth applying for
+                      </div>
+
+                    </div>
+
+                  </Button>
+
+                  {/* Add Application */}
+
+                  <Button
+                    variant="outline"
+                    className="h-auto min-h-[76px] min-w-0 justify-start rounded-xl border-border/50 bg-card px-4 py-3 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                    onClick={() =>
+                      handlePromptClick(
+                        "Add this job to my tracker: "
+                      )
+                    }
+                  >
+
+                    <BookmarkPlus className="mr-3 h-5 w-5 shrink-0 text-primary" />
+
+                    <div className="min-w-0">
+
+                      <div className="text-sm font-semibold text-foreground">
+                        Add to Applications
+                      </div>
+
+                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Add a job to your tracker
+                      </div>
+
+                    </div>
+
+                  </Button>
+
+                  {/* Update Status */}
+
+                  <Button
+                    variant="outline"
+                    className="h-auto min-h-[76px] min-w-0 justify-start rounded-xl border-border/50 bg-card px-4 py-3 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                    onClick={() =>
+                      handlePromptClick(
+                        "Mark [Company] as [Status]"
+                      )
+                    }
+                  >
+
+                    <CheckCircle2 className="mr-3 h-5 w-5 shrink-0 text-primary" />
+
+                    <div className="min-w-0">
+
+                      <div className="text-sm font-semibold text-foreground">
+                        Update Status
+                      </div>
+
+                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Mark a job as Interview,
+                        Offer, etc.
+                      </div>
+
+                    </div>
+
+                  </Button>
+
+                  {/* Next Step */}
+
+                  <Button
+                    variant="outline"
+                    className="h-auto min-h-[76px] min-w-0 justify-start rounded-xl border-border/50 bg-card px-4 py-3 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                    onClick={() =>
+                      handlePromptClick(
+                        "Based on my current applications and skills, what should my next career step be?"
+                      )
+                    }
+                  >
+
+                    <Map className="mr-3 h-5 w-5 shrink-0 text-primary" />
+
+                    <div className="min-w-0">
+
+                      <div className="text-sm font-semibold text-foreground">
+                        Find Next Step
+                      </div>
+
+                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Get practical career advice
+                      </div>
+
+                    </div>
+
+                  </Button>
+
                 </div>
               </div>
             )}
-        
-          {error && (
-            <div className="text-sm text-destructive">
-              Sorry, something went wrong. Please try again.
+
+          {/* ==================================================
+              INTERVIEW SETUP
+          ================================================== */}
+
+          {messages.length === 0 &&
+            activeFeature ===
+              "interview" && (
+              <div className="flex min-h-full w-full items-center justify-center px-2 py-8">
+
+                <div className="w-full max-w-2xl">
+
+                  {/* ------------------------------------------
+                      CHOOSE INTERVIEW MODE
+                  ------------------------------------------ */}
+
+                  {interviewMode ===
+                    "choose" && (
+                    <div className="text-center">
+
+                      <div className="mb-4 inline-flex rounded-full border border-primary/20 bg-primary/10 p-4 shadow-sm">
+
+                        <Brain className="h-6 w-6 text-primary" />
+
+                      </div>
+
+                      <h3 className="text-lg font-bold text-foreground sm:text-xl">
+                        Interview Prep
+                      </h3>
+
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                        Choose how you want to practice.
+                        Alymera can tailor the interview
+                        to a specific job or help you
+                        practice generally.
+                      </p>
+
+                      <div className="mt-7 space-y-3">
+
+                        {/* Application */}
+
+                        <Button
+                          variant="outline"
+                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                          onClick={() =>
+                            setInterviewMode(
+                              "application"
+                            )
+                          }
+                        >
+
+                          <Briefcase className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                          <div className="min-w-0">
+
+                            <div className="text-sm font-semibold text-foreground">
+                              Practice for an application
+                            </div>
+
+                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                              Choose a job from your Application Tracker.
+                            </div>
+
+                          </div>
+
+                        </Button>
+
+                        {/* Paste JD */}
+
+                        <Button
+                          variant="outline"
+                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                          onClick={() =>
+                            setInterviewMode(
+                              "job-description"
+                            )
+                          }
+                        >
+
+                          <FileText className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                          <div className="min-w-0">
+
+                            <div className="text-sm font-semibold text-foreground">
+                              Use a job description
+                            </div>
+
+                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                              Paste a JD for a specific role.
+                            </div>
+
+                          </div>
+
+                        </Button>
+
+                        {/* General */}
+
+                        <Button
+                          variant="outline"
+                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                          onClick={
+                            startGeneralInterview
+                          }
+                        >
+
+                          <Brain className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                          <div className="min-w-0">
+
+                            <div className="text-sm font-semibold text-foreground">
+                              General practice
+                            </div>
+
+                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                              Practice without a specific job.
+                            </div>
+
+                          </div>
+
+                        </Button>
+
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-5"
+                        onClick={
+                          cancelInterview
+                        }
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------
+                      APPLICATION LIST
+                  ------------------------------------------ */}
+
+                  {interviewMode ===
+                    "application" &&
+                    !selectedApplication && (
+                    <div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={
+                          backToInterviewChoices
+                        }
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+
+                      <div className="mt-4 text-center">
+
+                        <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
+
+                          <Briefcase className="h-5 w-5 text-primary" />
+
+                        </div>
+
+                        <h3 className="text-lg font-bold">
+                          Choose an application
+                        </h3>
+
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Alymera will use the saved
+                          application details and job
+                          description to make the interview
+                          more relevant.
+                        </p>
+
+                      </div>
+
+                      <div className="mt-6 space-y-3">
+
+                        {loadingApplications ? (
+                          <div className="rounded-xl border border-border/50 bg-card p-6 text-center text-sm text-muted-foreground">
+                            Loading your applications...
+                          </div>
+                        ) : applications.length ===
+                          0 ? (
+                          <div className="rounded-xl border border-border/50 bg-card p-6 text-center">
+
+                            <Briefcase className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+
+                            <p className="text-sm font-semibold">
+                              No applications found
+                            </p>
+
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Add a job to your Application
+                              Tracker first.
+                            </p>
+
+                          </div>
+                        ) : (
+                          applications.map(
+                            (
+                              application
+                            ) => (
+                              <button
+                                key={
+                                  application.id
+                                }
+                                type="button"
+                                onClick={() =>
+                                  selectApplication(
+                                    application
+                                  )
+                                }
+                                className="w-full rounded-xl border border-border/50 bg-card p-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                              >
+
+                                <div className="flex items-start justify-between gap-3">
+
+                                  <div className="min-w-0">
+
+                                    <div className="truncate text-sm font-semibold text-foreground">
+                                      {
+                                        application.position
+                                      }
+                                    </div>
+
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                      {
+                                        application.company
+                                      }
+                                    </div>
+
+                                  </div>
+
+                                  {application.status && (
+                                    <span className="shrink-0 rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                                      {
+                                        application.status
+                                      }
+                                    </span>
+                                  )}
+
+                                </div>
+
+                              </button>
+                            )
+                          )
+                        )}
+
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------
+                      SELECTED APPLICATION
+                  ------------------------------------------ */}
+
+                  {interviewMode ===
+                    "application" &&
+                    selectedApplication && (
+                    <div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setSelectedApplication(
+                            null
+                          )
+                        }
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Applications
+                      </Button>
+
+                      <div className="mt-5 rounded-xl border border-border/50 bg-card p-5">
+
+                        <div className="flex items-start gap-3">
+
+                          <div className="rounded-lg bg-primary/10 p-2">
+
+                            <Briefcase className="h-5 w-5 text-primary" />
+
+                          </div>
+
+                          <div className="min-w-0">
+
+                            <h3 className="text-sm font-semibold">
+                              {
+                                selectedApplication.position
+                              }
+                            </h3>
+
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {
+                                selectedApplication.company
+                              }
+                            </p>
+
+                            {selectedApplication.status && (
+                              <span className="mt-2 inline-block rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                                {
+                                  selectedApplication.status
+                                }
+                              </span>
+                            )}
+
+                          </div>
+
+                        </div>
+
+                        <div className="mt-5 rounded-lg bg-muted/40 p-3">
+
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+
+                            {selectedApplication.job_description
+                              ? "The saved job description will be used to tailor your interview."
+                              : "This application does not have a saved job description. You can still practice based on your resume and application details."}
+
+                          </p>
+
+                        </div>
+
+                        <Button
+                          className="mt-4 w-full"
+                          onClick={
+                            startApplicationInterview
+                          }
+                          disabled={
+                            isLoading
+                          }
+                        >
+                          Start Interview
+                        </Button>
+
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* ------------------------------------------
+                      PASTE JOB DESCRIPTION
+                  ------------------------------------------ */}
+
+                  {interviewMode ===
+                    "job-description" && (
+                    <div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={
+                          backToInterviewChoices
+                        }
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+
+                      <div className="mt-5 text-center">
+
+                        <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
+
+                          <FileText className="h-5 w-5 text-primary" />
+
+                        </div>
+
+                        <h3 className="text-lg font-bold">
+                          Use a job description
+                        </h3>
+
+                        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                          Paste the job description below.
+                          Alymera will use it with your
+                          saved resume to create a
+                          role-specific interview.
+                        </p>
+
+                      </div>
+
+                      <div className="mt-6">
+
+                        <PromptInput
+                          onSubmit={(
+                            message
+                          ) => {
+                            handleSubmit(
+                              message.text
+                            )
+                          }}
+                          className="rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10"
+                        >
+
+                          <PromptInputTextarea
+                            placeholder="Paste the job description here..."
+                            value={prompt}
+                            className="min-h-[150px] max-h-[300px] resize-none rounded-2xl border-0 py-3 focus-visible:ring-0"
+                            onChange={(
+                              e
+                            ) =>
+                              setPrompt(
+                                e.target.value
+                              )
+                            }
+                          />
+
+                          <div className="flex flex-col justify-end p-2">
+
+                            <PromptInputSubmit
+                              aria-label="Start interview"
+                              className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+                              disabled={
+                                !prompt.trim() ||
+                                isLoading
+                              }
+                            />
+
+                          </div>
+
+                        </PromptInput>
+
+                      </div>
+
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+            )}
+
+          {/* ==================================================
+              MESSAGES
+          ================================================== */}
+
+          {messages.map(
+            (message) => (
+              <Message
+                from={message.role}
+                key={message.id}
+              >
+
+                <MessageContent
+                  from={
+                    message.role as
+                      | "user"
+                      | "assistant"
+                  }
+                >
+
+                  {message.parts.map(
+                    (
+                      part,
+                      index
+                    ) =>
+                      part.type ===
+                      "text" ? (
+                        <MessageResponse
+                          key={index}
+                        >
+                          {part.text}
+                        </MessageResponse>
+                      ) : null
+                  )}
+
+                </MessageContent>
+
+              </Message>
+            )
+          )}
+
+          {/* ==================================================
+              FEATURE STATUS
+          ================================================== */}
+
+          {activeFeature &&
+            status ===
+              "submitted" && (
+            <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+
+                <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+
+                <span className="text-sm text-muted-foreground">
+
+                  {activeFeature ===
+                  "resume-analysis"
+                    ? "Analyzing your resume..."
+                    : activeFeature ===
+                        "job-matching"
+                      ? "Analyzing this job..."
+                      : activeFeature ===
+                          "interview"
+                        ? "Preparing your interview..."
+                        : "Thinking..."}
+
+                </span>
+
+                <span className="flex gap-1">
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+
+                </span>
+
+              </div>
+
             </div>
           )}
+
+          {/* ==================================================
+              THINKING
+          ================================================== */}
+
+          {!activeFeature &&
+            status ===
+              "submitted" && (
+            <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+
+                <Sparkles className="h-4 w-4 text-primary" />
+
+                <span className="text-sm text-muted-foreground">
+                  Alymera is thinking
+                </span>
+
+                <span className="flex gap-1">
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+
+                </span>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* ==================================================
+              ERROR
+          ================================================== */}
+
+          {error && (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+              {error.message}
+            </div>
+          )}
+
         </ConversationContent>
 
         <ConversationScrollButton />
+
       </Conversation>
 
-     {/* Input */}
-      <div className="p-4 bg-card border-t border-border/50">
+      {/* ==================================================
+          INPUT AREA
+      ================================================== */}
 
-        <div className="max-w-3xl mx-auto w-full">
+      <div className="shrink-0 border-t border-border/50 bg-card px-3 py-3 sm:px-4 sm:py-4">
 
-          <PromptInput
-            onSubmit={handleSubmit}
-            className="shrink-0 bg-background rounded-2xl border border-border/50 shadow-sm focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all"
-          >
+        <div className="mx-auto w-full max-w-5xl space-y-3">
 
-            <PromptInputTextarea
-              placeholder="Ask Alymera..."
-              value={prompt}
-              className="min-h-[50px] max-h-[250px] py-3.5 border-0 focus-visible:ring-0 resize-none rounded-2xl"
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit()
-                }
-              }}
-            />
+          {/* ==================================================
+              ACTIVE FEATURE MESSAGE
+          ================================================== */}
 
-            <div className="flex flex-col justify-end p-2 pb-2 pr-2">
+          {activeFeature ===
+            "job-matching" && (
+            <div className="flex flex-row rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
 
-              {isLoading ? (
-                <PromptInputSubmit
-                  type="button"
-                  onClick={stop}
-                  className="rounded-xl bg-destructive text-destructive-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
-                >
-                  ■
-                </PromptInputSubmit>
-              ) : (
-                <PromptInputSubmit
-                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
-                  disabled={!prompt.trim()}
-                />
-              )}
+              <p className="text-xs font-medium text-primary">
+                Job Matching
+                 <br></br>
+                <span className="mt-0.5 text-xs text-muted-foreground" > Paste the job description into
+                the message box below.</span>
+              </p>
+
+            
+              <div className="flex-1"></div>
+               <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => {
+        setActiveFeature(null)
+        setPrompt("")
+      }}
+    >
+     <X className="h-4 w-4" />
+    </Button>
+            </div>
+          )}
+
+          
+
+          {activeFeature ===
+            "interview" &&
+            messages.length > 0 && (
+            <div className="flex flex-row rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
+
+              <p className="text-xs font-medium text-primary">
+                Interview Prep
+                <br></br>
+             <span className="mt-0.5 text-xs text-muted-foreground">
+                Answer the interview question
+                naturally. Alymera will evaluate
+                your answer and continue.
+              </span>
+              </p>
+              
+
+
+           <div className="flex-1"> </div>
+              <div className="flex-1"></div>
+               <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleEndInterview}
+    >
+    <X className="h-4 w-4" />
+    </Button>
 
             </div>
+          )}
 
-          </PromptInput>
-          <div className="space-y-2">
-  <label className="text-sm font-medium">
-    Job Description
-  </label>
+          {/* ==================================================
+              CHAT INPUT
+          ================================================== */}
 
-  <textarea
-    value={jobDescription}
-    onChange={(e) => setJobDescription(e.target.value)}
-    placeholder="Paste a job description here..."
-    className="min-h-[160px] w-full rounded-lg border bg-background p-3 text-sm"
-  />
-</div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-  <Button
-    variant="outline"
-    onClick={analyzeResume}
-    disabled={isAnalyzingResume}
-    className="h-auto flex-col gap-2 py-4"
-  >
-    <FileSearch className="h-5 w-5" />
-    <span>
-      {isAnalyzingResume ? "Analyzing..." : "Analyze Resume"}
-    </span>
-  </Button>
+          {/*
+           * Hide the normal bottom input while the user is
+           * choosing an interview mode.
+           *
+           * The JD mode has its own input above.
+           */}
 
-  <Button
-    variant="outline"
-    onClick={jobMatching}
-    disabled={isMatchingJob}
-    className="h-auto flex-col gap-2 py-4"
-  >
-    <Map className="h-5 w-5" />
-    <span>
-      {isMatchingJob ? "Matching..." : "Job Matching"}
-    </span>
-  </Button>
+          {!(
+            activeFeature ===
+              "interview" &&
+            messages.length === 0
+          ) && (
+            <PromptInput
+              onSubmit={(
+                message
+              ) => {
+                handleSubmit(
+                  message.text
+                )
+              }}
+              className="shrink-0 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10"
+            >
 
-  <Button
-    variant="outline"
-    onClick={interviewing}
-    disabled={isGeneratingInterview}
-    className="h-auto flex-col gap-2 py-4"
-  >
-    <CheckCircle2 className="h-5 w-5" />
-    <span>
-      {isGeneratingInterview ? "Generating..." : "Interview Prep"}
-    </span>
-  </Button>
-</div>
+              <PromptInputTextarea
+                placeholder={
+                  getInputPlaceholder()
+                }
+                value={prompt}
+                className="min-h-[48px] max-h-[120px] resize-none rounded-2xl border-0 py-3 focus-visible:ring-0"
+                onChange={(e) =>
+                  setPrompt(
+                    e.target.value
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (
+                    e.key ===
+                      "Enter" &&
+                    !e.shiftKey
+                  ) {
+                    e.preventDefault()
 
-{resumeAnalysis && (
-  <div className="mt-6 space-y-5 rounded-xl border p-5">
-    <div>
-      <h3 className="text-lg font-semibold">Resume Analysis</h3>
-      <p className="text-sm text-muted-foreground">
-        AI analysis of your stored resume.
-      </p>
-    </div>
+                    handleSubmit()
+                  }
+                }}
+              />
 
-    <div className="text-center">
-      <p className="text-sm text-muted-foreground">ATS Score</p>
-      <p className="text-4xl font-bold">
-        {resumeAnalysis.atsScore}/100
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {resumeAnalysis.atsExplanation}
-      </p>
-    </div>
+              <div className="flex flex-col justify-end p-2">
+                
+                {isLoading ? (
+                  <PromptInputSubmit
+                    type="button"
+                    onClick={
+                      stop
+                    }
+                    aria-label="Stop generating"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive text-destructive-foreground shadow-sm"
+                  >
+                    ■
+                  </PromptInputSubmit>
+                ) : (
+                  <PromptInputSubmit
+                    aria-label="Send message"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+                    disabled={
+                      !prompt.trim()
+                    }
+                  />
+                )}
 
-    <div>
-      <h4 className="font-medium">Professional Headline</h4>
-      <p className="text-sm text-muted-foreground">
-        {resumeAnalysis.professionalHeadline}
-      </p>
-    </div>
+              </div>
 
-    <div>
-      <h4 className="font-medium">Professional Summary</h4>
-      <p className="text-sm text-muted-foreground">
-        {resumeAnalysis.professionalSummary}
-      </p>
-    </div>
+            </PromptInput>
+          )}
 
-    <div>
-      <h4 className="font-medium">Strengths</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {resumeAnalysis.strengths.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    </div>
+          {/* ==================================================
+              CAREER ACTIONS
+          ================================================== */}
 
-    <div>
-      <h4 className="font-medium">Weaknesses</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {resumeAnalysis.weaknesses.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    </div>
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
 
-    <div>
-      <h4 className="font-medium">Recommendations</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {resumeAnalysis.recommendations.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    </div>
+            {/* Resume */}
 
-    <div>
-      <h4 className="font-medium">
-        Hireability Assessment
-      </h4>
-      <p className="text-sm">
-        {resumeAnalysis.hireabilityAssessment}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {resumeAnalysis.hireabilityExplanation}
-      </p>
-    </div>
-  </div>
-)}
+            <Button
+              variant="outline"
+              onClick={
+                analyzeResume
+              }
+              disabled={
+                isLoading ||
+                activeFeature !== null
+              }
+              size="sm"
+              className="w-full min-w-0 justify-start rounded-xl border-border/50 hover:bg-muted/50"
+            >
 
-{jobMatch && (
-  <div className="mt-6 space-y-5 rounded-xl border p-5">
-    <div>
-      <h3 className="text-lg font-semibold">Job Match</h3>
-      <p className="text-sm text-muted-foreground">
-        How well your resume matches this job description.
-      </p>
-    </div>
+              <FileSearch className="mr-2 h-4 w-4 shrink-0 text-primary" />
 
-    <div className="text-center">
-      <p className="text-sm text-muted-foreground">
-        Match Score
-      </p>
-      <p className="text-4xl font-bold">
-        {jobMatch.matchScore}/100
-      </p>
-    </div>
+              <span className="truncate">
+                Analyze Resume
+              </span>
 
-    <div>
-      <h4 className="font-medium">Matched Skills</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {jobMatch.matchedSkills.map((skill, index) => (
-          <li key={index}>{skill}</li>
-        ))}
-      </ul>
-    </div>
+            </Button>
 
-    <div>
-      <h4 className="font-medium">Missing Skills</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {jobMatch.missingSkills.map((skill, index) => (
-          <li key={index}>{skill}</li>
-        ))}
-      </ul>
-    </div>
+            {/* Job Match */}
 
-    <div>
-      <h4 className="font-medium">Strengths</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {jobMatch.strengths.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    </div>
+            <Button
+              variant="outline"
+              onClick={
+                startJobMatching
+              }
+              disabled={
+                isLoading ||
+                activeFeature !== null
+              }
+              size="sm"
+              className="w-full min-w-0 justify-start rounded-xl border-border/50 hover:bg-muted/50"
+            >
 
-    <div>
-      <h4 className="font-medium">Recommendations</h4>
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {jobMatch.recommendations.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    </div>
+              <Map className="mr-2 h-4 w-4 shrink-0 text-primary" />
 
-    <div>
-      <h4 className="font-medium">Explanation</h4>
-      <p className="text-sm text-muted-foreground">
-        {jobMatch.explanation}
-      </p>
-    </div>
-  </div>
-)}
+              <span className="truncate">
+                Job Match
+              </span>
 
-{interview && (
-  <div className="mt-6 space-y-5 rounded-xl border p-5">
-    <div>
-      <h3 className="text-lg font-semibold">
-        Interview Preparation
-      </h3>
-      <p className="text-sm text-muted-foreground">
-        AI-generated interview questions based on the
-        resume and job description.
-      </p>
-    </div>
+            </Button>
 
-    <div className="space-y-4">
-      <h4 className="font-medium">Interview Questions</h4>
+            {/* Interview */}
 
-      {interview.questions.map((item, index) => (
-        <div
-          key={index}
-          className="rounded-lg border p-4"
-        >
-          <p className="font-medium">
-            {index + 1}. {item.question}
-          </p>
+            <Button
+              variant="outline"
+              onClick={
+                startInterview
+              }
+              disabled={
+                isLoading ||
+                activeFeature !== null
+              }
+              size="sm"
+              className="w-full min-w-0 justify-start rounded-xl border-border/50 hover:bg-muted/50"
+            >
 
-          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-            <p>
-              <span className="font-medium">Category:</span>{" "}
-              {item.category}
-            </p>
+              <CheckCircle2 className="mr-2 h-4 w-4 shrink-0 text-primary" />
 
-            <p>
-              <span className="font-medium">Difficulty:</span>{" "}
-              {item.difficulty}
-            </p>
+              <span className="truncate">
+                Interview Prep
+              </span>
 
-            <p>
-              <span className="font-medium">Focus:</span>{" "}
-              {item.focus}
-            </p>
+            </Button>
+
           </div>
-        </div>
-      ))}
-    </div>
 
-    <div>
-      <h4 className="font-medium">Preparation Tips</h4>
+          {/* Disclaimer */}
 
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {interview.preparationTips.map((tip, index) => (
-          <li key={index}>{tip}</li>
-        ))}
-      </ul>
-    </div>
+          <div className="text-center">
 
-    <div>
-      <h4 className="font-medium">Explanation</h4>
-      <p className="text-sm text-muted-foreground">
-        {interview.explanation}
-      </p>
-    </div>
-  </div>
-)}
-
-          <div className="text-center mt-2">
-            <p className="text-[10px] text-muted-foreground">
-              Alymera AI can make mistakes. Consider verifying important information.
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Career Assistant can make mistakes.
+              Verify important information.
             </p>
+
           </div>
 
         </div>
+
       </div>
+
     </div>
   )
 }
