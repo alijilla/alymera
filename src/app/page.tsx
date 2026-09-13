@@ -96,7 +96,7 @@ export default function LandingPage() {
           </h2>
 
           {/* Description */}
-          <p className="mt-5 max-w-xl text-base leading-7  text-muted-foreground/90 sm:mt-6 sm:text-lg sm:leading-8 md:text-xl">
+          <p className="mt-5 max-w-xl text-base leading-7  text-foreground/70 sm:mt-6 sm:text-lg sm:leading-8 md:text-xl">
             One AI-powered workspace to build projects, manage job
             applications, and grow your career — all in one place.
           </p>
