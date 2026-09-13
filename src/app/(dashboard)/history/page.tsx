@@ -84,12 +84,58 @@ export default function HistoryPage() {
       .includes(search.toLowerCase())
   )
 
-  // Delete from UI for now
-  const handleDelete = (id: string) => {
-    setHistory((current) =>
-      current.filter((item) => item.id !== id)
-    )
+ const handleDelete = async (id: string) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    console.error("User not authenticated")
+    return
   }
+
+  const { error } = await supabase
+    .from("conversations")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) {
+    console.error("Conversation delete error:", error)
+    return
+  }
+
+  // Remove from UI after successful database deletion
+  setHistory((current) =>
+    current.filter((item) => item.id !== id)
+  )
+}
+
+const handleDeleteAll = async () => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    console.error("User not authenticated")
+    return
+  }
+
+  const { error } = await supabase
+    .from("conversations")
+    .delete()
+    .eq("user_id", user.id)
+
+  if (error) {
+    console.error(
+      "Delete all conversations error:",
+      error
+    )
+    return
+  }
+
+  setHistory([])
+}
 
   // Open conversation
   const handleSelect = (id: string) => {
@@ -124,7 +170,10 @@ export default function HistoryPage() {
   return (
     <main className="flex-1 p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <HistoryHeader />
+        <HistoryHeader
+  onDeleteAll={handleDeleteAll}
+  hasHistory={history.length > 0}
+/>
 
         <HistoryFilters
           value={search}
