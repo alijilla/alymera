@@ -54,7 +54,7 @@ export default function Hero3D() {
             ? [0, 0, 4.5]
             : [0, 0, 3.3],
         }}
-        dpr={[1, 2]}
+        dpr={isMobile ? 1 : [1, 1.5]}
         eventSource={
           typeof window !== "undefined"
             ? document.body
