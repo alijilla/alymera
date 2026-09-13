@@ -83,7 +83,7 @@ export default function Hero3D() {
           <group
             position={
               isMobile
-                ? [1.3, 0.8, 0]
+                ? [0, -2, 0]
                 : [2.5, 0, 0]
             }
             rotation={
@@ -124,7 +124,7 @@ export default function Hero3D() {
 
             {/* Workspace */}
             <Float
-              floatIntensity={0}
+              floatIntensity={1}
               rotationIntensity={0}
               speed={
                 reducedMotion ? 0 : 2
