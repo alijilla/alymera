@@ -62,13 +62,19 @@ export default function Hero3D() {
         }
       >
         {/* Lighting */}
-        <ambientLight intensity={1} />
+      <ambientLight intensity={1.5} />
 
-        <pointLight
-          position={[0, 0, -5]}
-          color="#a855f7"
-          intensity={2}
-        />
+      <directionalLight
+        position={[2, 4, 5]}
+        intensity={3}
+        color="#F5F3FF"
+      />
+
+      <pointLight
+        position={[0, 0, 5]}
+        color="#a855f7"
+        intensity={2}
+      />
 
         <React.Suspense fallback={null}>
           {/* Environment */}
