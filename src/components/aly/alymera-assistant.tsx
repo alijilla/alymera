@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
@@ -43,17 +42,17 @@ import { Button } from "@/components/ui/button"
 
 type AlymeraAssistantProps = {
   demo?: boolean
+  conversationId?: string | null
 }
 
 export function AlymeraAssistant({
   demo = false,
+  conversationId: existingConversationId = null,
 }: AlymeraAssistantProps) {
 
   const [prompt, setPrompt] = useState("")
 const [conversationId, setConversationId] = useState<string | null>(null)
-  const searchParams = useSearchParams()
-const existingConversationId =
-  searchParams.get("conversationId")
+
 const {
   messages,
   sendMessage,
