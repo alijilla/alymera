@@ -1,4 +1,5 @@
 import { groq } from "@ai-sdk/groq"
+import { createOpenAI } from "@ai-sdk/openai"
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -31,6 +32,10 @@ import {
 } from "@/lib/ai/prompts"
 
 export const maxDuration = 30
+//const openrouter = createOpenAI({
+  //apiKey: process.env.OPENROUTER_API_KEY,
+ // baseURL: "https://openrouter.ai/api/v1",
+//})
 
 export async function POST(req: Request) {
   const projectTools = {
@@ -549,13 +554,12 @@ of a specific employer or role.
     }
 
     // ============================================================
-    // STREAM AI RESPONSE
+    // STREAM AI RESPONSE  {*/ model: openrouter("x-ai/grok-4.1-fast:free"),*/}
     // ============================================================
 
     const result = streamText({
-      model: groq(
-        "openai/gpt-oss-120b"
-      ),
+   
+     model: groq("openai/gpt-oss-120b"),
 
       system: basePrompt,
 
@@ -583,48 +587,36 @@ of a specific employer or role.
     // CREATE UI STREAM
     // ============================================================
 
-    const stream =
-      createUIMessageStream({
-        execute: async ({
-          writer,
-        }) => {
-          if (
-            !demo &&
-            activeConversationId
-          ) {
-            writer.write({
-              type:
-                "data-conversationId",
-              data:
-                activeConversationId,
-            })
-          }
+  const stream = createUIMessageStream({
+  originalMessages: messages,
 
-          const uiStream =
-            result.toUIMessageStream({
-              originalMessages:
-                messages,
-            })
+  execute: async ({ writer }) => {
+    if (!demo && activeConversationId) {
+      writer.write({
+        type: "data-conversationId",
+        data: activeConversationId,
+      })
+    }
 
-          writer.merge(uiStream)
-        },
+    const uiStream = result.toUIMessageStream()
 
+    writer.merge(uiStream)
+  },
 
-        onError: (error) => {
-  console.error("STREAM ERROR:", error)
+  onError: (error) => {
+    console.error("STREAM ERROR:", error)
 
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    error.status === 429
-  ) {
-    return "You've reached the AI usage limit. Please try again later."
-  }
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 429
+    ) {
+      return "You've reached the AI usage limit. Please try again later."
+    }
 
-  return "AI is temporarily unavailable. Please try again later."
-},
-
+    return "AI is temporarily unavailable. Please try again later."
+  },
         // ========================================================
         // SAVE ASSISTANT RESPONSE
         // ========================================================

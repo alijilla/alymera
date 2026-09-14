@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
+import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import { supabase } from "@/lib/supabase/client"
 import { Sparkles } from "lucide-react"
 import {
@@ -30,7 +32,6 @@ export function CodingAssistant({
   conversationId: conversationIdProp,
 }: {
   projectId?: string
-  githubRepo?: string
   conversationId?: string | null
 })  {
   const [prompt, setPrompt] = useState("")
@@ -46,6 +47,7 @@ const {
   error,
   stop,
   setMessages,
+    addToolApprovalResponse,
 } = useChat({
   transport: new DefaultChatTransport({
     api: "/api/alymera",
@@ -56,6 +58,8 @@ const {
     },
   }),
 
+    sendAutomaticallyWhen:
+      lastAssistantMessageIsCompleteWithApprovalResponses,
   onData: (dataPart) => {
    if (dataPart.type === "data-conversationId") {
   if (typeof dataPart.data === "string") {
@@ -127,7 +131,30 @@ setConversationId(conversationIdProp)
   // --------------------------------------------------
   // Send message
   // --------------------------------------------------
+const getToolLabel = (toolName: string) => {
+    const labels: Record<string, string> = {
+      getProjects: "Checking your projects",
+      getProjectTasks: "Checking your tasks",
+      getProjectMilestones: "Checking your milestones",
+      getProjectProgress: "Checking project progress",
 
+      createProject: "Creating your project",
+      createTask: "Creating your task",
+      createMilestone: "Creating your milestone",
+
+      UpdateTask: "Updating your task",
+
+    }
+
+    return labels[toolName] ?? "Working on it"
+  }
+
+
+  function isToolPart(
+  part: { type: string }
+): part is ToolUIPart | DynamicToolUIPart {
+  return part.type.startsWith("tool-")
+}
 const handleSubmit = (text?: string) => {
   const message = (text ?? prompt).trim()
 
@@ -262,34 +289,93 @@ const handleSubmit = (text?: string) => {
               key={message.id}
             >
               <MessageContent from={message.role as "user" | "assistant"}>
-              {message.parts.map((part, index) => {
-                if (part.type === "text") {
-                  return (
-                    <MessageResponse key={index}>
-                      {part.text}
-                    </MessageResponse>
-                  )
-                }
+                                 {message.parts.map((part, index) => {
+                      if (part.type === "text") {
+                        return (
+                          <MessageResponse key={index}>
+                            {part.text}
+                          </MessageResponse>
+                        )
+                      }
 
-                if (part.type.startsWith("tool-")) {
-                  const toolName = part.type.replace("tool-", "")
+                      if (
+                       isToolPart(part)
+                      ) {
+                        const toolName =
+                          part.type.replace(
+                            "tool-",
+                            ""
+                          )
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 p-2 px-3 rounded-xl bg-muted/40 border border-border/50 text-sm w-fit my-2 shadow-sm"
-                    >
-                      <Sparkles className="h-4 w-4 text-primary" />
+                           if (part.state === "approval-requested") {
+    return (
+      <div
+        key={index}
+        className="rounded-lg border p-3"
+      >
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="size-4" />
+          <span className="font-medium">
+            {getToolLabel(toolName)}
+          </span>
+        </div>
 
-                      <span className="font-medium text-muted-foreground">
-                        {toolName}
-                      </span>
-                    </div>
-                  )
-                }
+        <p className="mb-3 text-sm text-muted-foreground">
+          Alymera wants to perform this action. Do you want to approve it?
+        </p>
 
-                return null
-              })}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>{
+                console.log("APPROVING TOOL:", {
+    approvalId: part.approval.id,
+    toolName,
+  })
+              addToolApprovalResponse({
+                id: part.approval.id,
+                approved: false,
+                reason: "User denied the action",
+              })
+            }}
+          >
+            Deny
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() =>
+              addToolApprovalResponse({
+                id: part.approval.id,
+                approved: true,
+              })
+            }
+          >
+            Approve
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+
+                        return (
+                          <div
+                            key={index}
+                            className="my-2 flex w-fit max-w-full items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2 shadow-sm"
+                          >
+                            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+
+                            <span className="break-words text-sm font-medium text-muted-foreground">
+                              {getToolLabel(toolName)}
+                            </span>
+                          </div>
+                        )
+                      }
+
+                      return null
+                    })}
                             </MessageContent>
             </Message>
           ))}

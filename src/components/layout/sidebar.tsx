@@ -7,6 +7,7 @@ import {
   BriefcaseBusiness,
   ChevronRight,
   Hammer,
+  History,
   LayoutDashboard,
   Settings,
   Sparkles,
@@ -123,7 +124,7 @@ export function SidebarLayout({
           tabhref: "/aly",
         },
         {
-          icon: <Sparkles className="h-4 w-4" />,
+          icon: <History className="h-4 w-4" />,
           tabname: "History",
           tabhref: "/history",
         },

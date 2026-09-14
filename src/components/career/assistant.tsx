@@ -1,10 +1,10 @@
 "use client"
-
-import { useEffect, useState } from "react"
+import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
+import { useEffect, useRef, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
-
+import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import {
   Conversation,
   ConversationContent,
@@ -81,6 +81,7 @@ export function CareerAssistant({
 
   const [interviewMode, setInterviewMode] =
     useState<InterviewMode>(null)
+    const interviewEndedRef = useRef(false)
 
   const [applications, setApplications] =
     useState<Application[]>([])
@@ -117,6 +118,7 @@ const conversationId =
     error,
     stop,
     setMessages,
+    addToolApprovalResponse,
   } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/alymera",
@@ -127,6 +129,8 @@ const conversationId =
       },
     }),
 
+    sendAutomaticallyWhen:
+        lastAssistantMessageIsCompleteWithApprovalResponses,
     onData: (dataPart) => {
       if (
         dataPart.type ===
@@ -143,12 +147,10 @@ const conversationId =
     },
   })
 
-  useEffect(() => {
-  if (error) {
-    console.error("CHAT ERROR:", error)
-    console.error("CHAT ERROR MESSAGE:", error.message)
-  }
-}, [error])
+useEffect(() => {
+  console.log("CAREER MESSAGES:", messages)
+  console.log("CAREER STATUS:", status)
+}, [messages, status])
   // --------------------------------------------------
   // Load Existing Conversation
   // --------------------------------------------------
@@ -255,45 +257,42 @@ const conversationId =
   // Load Applications
   // --------------------------------------------------
 
-  const loadApplications =
-    async () => {
-      setLoadingApplications(true)
+  const loadApplications = async () => {
+  setLoadingApplications(true)
 
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("applications")
-        .select(
-            "id, company, position, location, date_applied, status, job_description, job_url, notes, created_at"
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          }
-        )
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-      if (error) {
-        console.error(
-          "Failed to load applications:",
-          error
-        )
+  if (!user) {
+    setApplications([])
+    setLoadingApplications(false)
+    return
+  }
 
-        setLoadingApplications(
-          false
-        )
+  const { data, error } = await supabase
+    .from("applications")
+    .select(
+      "id, company, position, location, date_applied, status, job_description, job_url, notes, created_at"
+    )
+    .eq("user_id", user.id)
+    .order("created_at", {
+      ascending: false,
+    })
 
-        return
-      }
+  if (error) {
+    console.error(
+      "Failed to load applications:",
+      error
+    )
 
-      setApplications(
-        data ?? []
-      )
+    setLoadingApplications(false)
+    return
+  }
 
-      setLoadingApplications(false)
-    }
-
+  setApplications(data ?? [])
+  setLoadingApplications(false)
+}
   // --------------------------------------------------
   // Normal Chat
   // --------------------------------------------------
@@ -301,6 +300,13 @@ const conversationId =
   const handleSubmit = (
     text?: string
   ) => {
+
+        if (
+  activeFeature === "interview" &&
+  interviewEndedRef.current
+) {
+  return
+}
     const message =
       (text ?? prompt).trim()
 
@@ -310,6 +316,8 @@ const conversationId =
     ) {
       return
     }
+
+
 
     /*
      * ----------------------------------------------
@@ -440,6 +448,32 @@ const conversationId =
     handleSubmit(text)
   }
 
+
+    const getToolLabel = (toolName: string) => {
+      const labels: Record<string, string> = {
+        getProjects: "Checking your projects",
+        getProjectTasks: "Checking your tasks",
+        getProjectMilestones: "Checking your milestones",
+        getProjectProgress: "Checking project progress",
+          
+  
+        getApplications: "Checking your applications",
+        getResume: "Checking your resume",
+  
+        createApplication: "Creating your application",
+        UpdateApplication: "Updating your application",
+      }
+  
+      return labels[toolName] ?? "Working on it"
+    }
+  
+  
+    function isToolPart(
+    part: { type: string }
+  ): part is ToolUIPart | DynamicToolUIPart {
+    return part.type.startsWith("tool-")
+  }
+
   // --------------------------------------------------
   // Resume Analysis
   // --------------------------------------------------
@@ -507,9 +541,9 @@ const conversationId =
      * 3. General Practice
      */
 
-    setActiveFeature(
-      "interview"
-    )
+    interviewEndedRef.current = false
+
+  setActiveFeature("interview")
 
     setInterviewMode(
       "choose"
@@ -675,9 +709,10 @@ Ask me ONE interview question at a time.`,
 
 
    const handleEndInterview = async () => {
+      interviewEndedRef.current = true
   stop()
 
-  if (conversationId) {
+   if (conversationId) {
     const { error } = await supabase
       .from("conversations")
       .update({
@@ -733,7 +768,7 @@ Ask me ONE interview question at a time.`,
           </div>
 
           <div className="hidden shrink-0 rounded-lg border border-border/50 bg-background/60 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground lg:block">
-            GPT-OSS 120B · Groq
+            AI · Career
           </div>
 
         </div>
@@ -1342,21 +1377,129 @@ Ask me ONE interview question at a time.`,
                       | "assistant"
                   }
                 >
+{message.parts.map((part, index) => {
+  // --------------------------------------------------
+  // TEXT MESSAGE
+  // --------------------------------------------------
 
-                  {message.parts.map(
-                    (
-                      part,
-                      index
-                    ) =>
-                      part.type ===
-                      "text" ? (
-                        <MessageResponse
-                          key={index}
-                        >
-                          {part.text}
-                        </MessageResponse>
-                      ) : null
-                  )}
+  if (part.type === "text") {
+    return (
+      <MessageResponse key={index}>
+        {part.text}
+      </MessageResponse>
+    )
+  }
+
+  // --------------------------------------------------
+  // TOOL MESSAGE
+  // --------------------------------------------------
+
+  if (isToolPart(part)) {
+    const toolName = part.type.replace(
+      "tool-",
+      ""
+    )
+
+    // ------------------------------------------------
+    // APPROVAL REQUEST
+    // ------------------------------------------------
+
+    if (
+      part.state ===
+      "approval-requested"
+    ) {
+      return (
+        <div
+          key={index}
+          className="rounded-lg border p-3"
+        >
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="size-4" />
+
+            <span className="font-medium">
+              {getToolLabel(toolName)}
+            </span>
+          </div>
+
+          <p className="mb-3 text-sm text-muted-foreground">
+            Alymera wants to perform this
+            action. Do you want to approve it?
+          </p>
+
+          <div className="flex gap-2">
+            {/* DENY */}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                console.log(
+                  "DENYING TOOL:",
+                  {
+                    approvalId:
+                      part.approval.id,
+                    toolName,
+                  }
+                )
+
+                addToolApprovalResponse({
+                  id: part.approval.id,
+                  approved: false,
+                  reason:
+                    "User denied the action",
+                })
+              }}
+            >
+              Deny
+            </Button>
+
+            {/* APPROVE */}
+
+            <Button
+              type="button"
+              onClick={() => {
+                console.log(
+                  "APPROVING TOOL:",
+                  {
+                    approvalId:
+                      part.approval.id,
+                    toolName,
+                  }
+                )
+
+                addToolApprovalResponse({
+                  id: part.approval.id,
+                  approved: true,
+                })
+              }}
+            >
+              Approve
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // ------------------------------------------------
+    // TOOL EXECUTED / OTHER TOOL STATES
+    // ------------------------------------------------
+
+    return (
+      <div
+        key={index}
+        className="my-2 flex w-fit max-w-full items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2 shadow-sm"
+      >
+        <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+
+        <span className="break-words text-sm font-medium text-muted-foreground">
+          {getToolLabel(toolName)}
+        </span>
+      </div>
+    )
+  }
+
+  return null
+})}
 
                 </MessageContent>
 

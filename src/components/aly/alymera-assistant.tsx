@@ -1,12 +1,19 @@
 "use client"
-
+import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
 import { useEffect, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
 import { Canvas } from "@react-three/fiber"
 import { Environment } from "@react-three/drei"
-
+import {
+  Tool,
+  ToolHeader,
+  ToolContent,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool"
+import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import {
   Sparkles,
   Calendar,
@@ -60,6 +67,7 @@ const {
   error,
   stop,
   setMessages,
+  addToolApprovalResponse,
 } = useChat({
   transport: new DefaultChatTransport({
     api: "/api/alymera",
@@ -70,12 +78,15 @@ const {
     },
   }),
 
+  sendAutomaticallyWhen:
+    lastAssistantMessageIsCompleteWithApprovalResponses,
+
   onData: (dataPart) => {
-   if (dataPart.type === "data-conversationId") {
-  if (typeof dataPart.data === "string") {
-    setConversationId(dataPart.data)
-  }
-}
+    if (dataPart.type === "data-conversationId") {
+      if (typeof dataPart.data === "string") {
+        setConversationId(dataPart.data)
+      }
+    }
   },
 })
 
@@ -181,6 +192,12 @@ const handleSubmit = (text?: string) => {
     return labels[toolName] ?? "Working on it"
   }
 
+
+  function isToolPart(
+  part: { type: string }
+): part is ToolUIPart | DynamicToolUIPart {
+  return part.type.startsWith("tool-")
+}
   // --------------------------------------------------
   // Render
   // --------------------------------------------------
@@ -347,13 +364,66 @@ const handleSubmit = (text?: string) => {
                       }
 
                       if (
-                        part.type.startsWith("tool-")
+                       isToolPart(part)
                       ) {
                         const toolName =
                           part.type.replace(
                             "tool-",
                             ""
                           )
+
+                           if (part.state === "approval-requested") {
+    return (
+      <div
+        key={index}
+        className="rounded-lg border p-3"
+      >
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="size-4" />
+          <span className="font-medium">
+            {getToolLabel(toolName)}
+          </span>
+        </div>
+
+        <p className="mb-3 text-sm text-muted-foreground">
+          Alymera wants to perform this action. Do you want to approve it?
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>{
+                console.log("APPROVING TOOL:", {
+    approvalId: part.approval.id,
+    toolName,
+  })
+              addToolApprovalResponse({
+                id: part.approval.id,
+                approved: false,
+                reason: "User denied the action",
+              })
+            }}
+          >
+            Deny
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() =>
+              addToolApprovalResponse({
+                id: part.approval.id,
+                approved: true,
+              })
+            }
+          >
+            Approve
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
 
                         return (
                           <div

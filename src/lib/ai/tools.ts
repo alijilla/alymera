@@ -194,6 +194,7 @@ export const createProject = tool({
   description:
     
   "Create a project belonging to the authenticated ALYMERA user.",
+   needsApproval: true,
   inputSchema: z.object({
      name: z.string().min(1, "Must be atleast 1 char"),
     description: z.string().min(1, "Must be atleast 1 char" ), 
@@ -246,6 +247,7 @@ export const createTask = tool({
   description:
     
   "Create a task belonging to a specific project or milestone.",
+    needsApproval: true,
   inputSchema: z.object({
     name:z.string().min(1, "Must be atleast 1 char"),
     status:z.enum(["Backlog", "To Do", "In Progress", "In Review", "Done"]),
@@ -262,34 +264,43 @@ export const createTask = tool({
 execute: async ({
   name,
   status,
-  description,  
+  description,
   due_date,
   milestone_id,
   projectId,
-}) =>  {
+}) => {
+  console.log("CREATE TASK EXECUTING:", {
+    name,
+    projectId,
+  })
+
   const supabase = await createClient()
 
-  const { data, error } = await supabase 
-                      .from("tasks")
-                      .insert({
-                
-                        project_id: projectId,
-                        name,
-                        description,
-                        status,
-                        due_date,
-                        milestone_id,})
-   
-                 
-                        .select();
-                    if (error) {
-                      console.error("Insert error:", error);
-                      return;
-                    }
-    
-return {
-  task: data?.[0] ?? null,
-}
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      project_id: projectId,
+      name,
+      description,
+      status,
+      due_date,
+      milestone_id,
+    })
+    .select()
+
+  console.log("CREATE TASK RESULT:", {
+    task: data?.[0],
+    error,
+  })
+
+  if (error) {
+    console.error("Insert error:", error)
+    return
+  }
+
+  return {
+    task: data?.[0] ?? null,
+  }
 },
 })
 
@@ -299,6 +310,7 @@ export const createMilestone = tool({
   description:
     
   "Create a milestone belonging to a specific ALYMERA project.",
+   needsApproval: true,
   inputSchema: z.object({
   name: z.string().min(1, "Must be atleast 1 char"),
   description: z.string().min(1, "Must be atleast 1 char"),
@@ -351,6 +363,7 @@ export const createApplication = tool({
   description:
     
  "Create an application belonging to the authenticated ALYMERA user.",
+  needsApproval: true,
   inputSchema: z.object({
   company: z.string().min(1, "Must be atleast 1 char"),
   location: z.string().min(1, "Must be atleast 1 char"),
@@ -409,6 +422,7 @@ export const UpdateTask = tool({
   description:
     
   "Update a task belonging to a specific project or milestone.",
+   needsApproval: true,
   inputSchema: z.object({
 
          
@@ -465,6 +479,7 @@ export const UpdateApplication = tool({
   description:
     
   "Update an application status belonging to the authenticated ALYMERA user.",
+   needsApproval: true,
   inputSchema: z.object({
 
 status: z.enum(['Saved', 'Applied', 'Interview', 'Offer', 'Rejected', 'Ghosted']),
