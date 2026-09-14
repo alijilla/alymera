@@ -5,14 +5,7 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
 import { Canvas } from "@react-three/fiber"
-import { Environment } from "@react-three/drei"
-import {
-  Tool,
-  ToolHeader,
-  ToolContent,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool"
+
 import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import {
   Sparkles,
@@ -258,9 +251,9 @@ const handleSubmit = (text?: string) => {
                     }}
                     dpr={[1, 1.5]}
                   >
-                    <ambientLight intensity={1} />
+                    <ambientLight intensity={2} />
 
-                    <Environment preset="studio" />
+                  
 
                     <group position={[0, -0.5, 0]}>
                       <Mascot reducedMotion={false} />
@@ -471,24 +464,17 @@ const handleSubmit = (text?: string) => {
               {/* ERROR */}
               {/* ================================================= */}
 
+{/* Error */}
 {error && (
   <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-medium text-destructive">
-          {error.message?.includes("429") ||
-          error.message?.toLowerCase().includes("quota") ||
-          error.message?.toLowerCase().includes("rate limit")
-            ? "AI usage limit reached."
-            : "Something went wrong."}
+          AI assistant temporarily unavailable.
         </p>
 
         <p className="mt-1 text-xs text-destructive/80">
-          {error.message?.includes("429") ||
-          error.message?.toLowerCase().includes("quota") ||
-          error.message?.toLowerCase().includes("rate limit")
-            ? "The AI assistant has temporarily reached its usage limit. Please try again later."
-            : "Alymera couldn&apos;t complete that request. Please try again."}
+          The AI assistant may have reached its usage limit. Please try again later.
         </p>
       </div>
 
@@ -500,15 +486,11 @@ const handleSubmit = (text?: string) => {
           const lastUserMessage =
             [...messages]
               .reverse()
-              .find(
-                (message) =>
-                  message.role === "user"
-              )
+              .find((message) => message.role === "user")
 
           const textPart =
             lastUserMessage?.parts.find(
-              (part) =>
-                part.type === "text"
+              (part) => part.type === "text"
             )
 
           if (textPart?.type === "text") {

@@ -1,6 +1,6 @@
-//import { groq } from "@ai-sdk/groq"
+import { groq } from "@ai-sdk/groq"
 //import { createOpenAI } from "@ai-sdk/openai"
-import { google } from "@ai-sdk/google"
+//import { google } from "@ai-sdk/google"
 
 import {
   convertToModelMessages,
@@ -13,7 +13,7 @@ import {
 
 import {
   getCurrentProjectMilestones,
-   getCurrentProjectTasks,
+  getCurrentProjectTasks,
   getProjects,
   getProjectTasks,
   getProjectMilestones,
@@ -70,7 +70,6 @@ export async function POST(req: Request) {
     ...careerTools,
   }
 
-
   try {
     // ============================================================
     // REQUEST
@@ -95,23 +94,30 @@ export async function POST(req: Request) {
       projectId?: string
       conversationId?: string
     } = await req.json()
-const codingTools = {
-  getProjects,
-  ...(projectId
-    ? {
-        getCurrentProjectTasks: getCurrentProjectTasks(projectId),
-getCurrentProjectMilestones: getCurrentProjectMilestones(projectId),
-      }
-    : {
-        getProjectTasks,
-        getProjectMilestones,
-        getProjectProgress,
-      }),
-  createProject,
-  createTask,
-  createMilestone,
-  UpdateTask,
-}
+
+    const codingTools = {
+      getProjects,
+
+      ...(projectId
+        ? {
+            getCurrentProjectTasks:
+              getCurrentProjectTasks(projectId),
+
+            getCurrentProjectMilestones:
+              getCurrentProjectMilestones(projectId),
+          }
+        : {
+            getProjectTasks,
+            getProjectMilestones,
+            getProjectProgress,
+          }),
+
+      createProject,
+      createTask,
+      createMilestone,
+      UpdateTask,
+    }
+
     // ============================================================
     // VALIDATE ASSISTANT
     // ============================================================
@@ -589,67 +595,106 @@ of a specific employer or role.
     }
 
     // ============================================================
-    // STREAM AI RESPONSE
+    // STREAM AI RESPONSE model: groq("openai/gpt-oss-120b"),  model: google("gemini-3.6-flash"),
     // ============================================================
 
- let aiErrorMessage = "AI is temporarily unavailable. Please try again later."
+    let aiErrorMessage =
+      "AI is temporarily unavailable. Please try again later."
 
-const result = streamText({
-  model: google("gemini-3.6-flash"),
-  system: basePrompt,
-  messages: await convertToModelMessages(messages),
-  tools:
-    assistant === "alymera"
-      ? alymeraTools
-      : assistant === "career"
-        ? careerTools
-        : assistant === "coding"
-          ? codingTools
-          : undefined,
-  stopWhen: stepCountIs(5),
-  maxRetries: 0,
+    const result = streamText({
+     
+      model: groq("openai/gpt-oss-120b"),
+      system: basePrompt,
 
-  onError: ({ error }) => {
-    console.error("AI STREAM ERROR:", error)
+      messages:
+        await convertToModelMessages(
+          messages
+        ),
 
-    const errorText = JSON.stringify(error).toLowerCase()
+      tools:
+        assistant === "alymera"
+          ? alymeraTools
+          : assistant === "career"
+            ? careerTools
+            : assistant === "coding"
+              ? codingTools
+              : undefined,
 
-    if (
-      errorText.includes("429") ||
-      errorText.includes("quota") ||
-      errorText.includes("resource_exhausted") ||
-      errorText.includes("rate limit")
-    ) {
-      aiErrorMessage =
-        "AI usage limit reached. The AI assistant has temporarily reached its usage limit. Please try again later."
-    }
-  },
-})
-       // ============================================================
-    // CREATE UI STREAM
-    // ============================================================
+      stopWhen: stepCountIs(5),
 
-const stream = createUIMessageStream({
-  originalMessages: messages,
+      maxRetries: 0,
 
-  execute: async ({ writer }) => {
-    if (!demo && activeConversationId) {
-      writer.write({
-        type: "data-conversationId",
-        data: activeConversationId,
-      })
-    }
+      onError: ({ error }) => {
+        console.error(
+          "AI STREAM ERROR:",
+          error
+        )
 
-    const uiStream = result.toUIMessageStream({
-      onError: () => {
-        return aiErrorMessage
+        const errorText =
+          JSON.stringify(error)
+            .toLowerCase()
+
+        if (
+          errorText.includes("429") ||
+          errorText.includes("quota") ||
+          errorText.includes(
+            "resource_exhausted"
+          ) ||
+          errorText.includes(
+            "rate limit"
+          )
+        ) {
+          aiErrorMessage =
+            "AI usage limit reached. The AI assistant has temporarily reached its usage limit. Please try again later."
+        }
       },
     })
 
-    writer.merge(uiStream)
-  },
+    // ============================================================
+    // CREATE UI STREAM
+    // ============================================================
 
+    const stream =
+      createUIMessageStream({
+        originalMessages:
+          messages,
 
+        execute: async ({
+          writer,
+        }) => {
+          if (
+            !demo &&
+            activeConversationId
+          ) {
+            writer.write({
+              type:
+                "data-conversationId",
+
+              data:
+                activeConversationId,
+            })
+          }
+
+          // IMPORTANT:
+          // Do not put the onError handler here.
+          // The outer UI stream handles the
+          // final user-facing error.
+
+          const uiStream =
+            result.toUIMessageStream()
+
+          writer.merge(uiStream)
+        },
+
+        // IMPORTANT:
+        // Handle the final UI stream error here
+        // so the friendly error message is exposed
+        // to useChat instead of the SDK's generic
+        // "An error occurred." message.
+
+        onError: () => {
+          return aiErrorMessage
+        },
 
         // ========================================================
         // SAVE ASSISTANT RESPONSE
@@ -700,7 +745,8 @@ const stream = createUIMessageStream({
                       conversation_id:
                         activeConversationId,
 
-                      role: "assistant",
+                      role:
+                        "assistant",
 
                       content:
                         assistantContent,
@@ -756,7 +802,10 @@ const stream = createUIMessageStream({
       stream,
     })
   } catch (error: unknown) {
-    console.error("AI error:", error)
+    console.error(
+      "AI error:",
+      error
+    )
 
     if (
       typeof error === "object" &&
@@ -772,7 +821,8 @@ const stream = createUIMessageStream({
         {
           status: 429,
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
         }
       )
@@ -786,8 +836,10 @@ const stream = createUIMessageStream({
       {
         status: 500,
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
         },
       }
     )
-  }}
+  }
+}
