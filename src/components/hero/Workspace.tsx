@@ -1,4 +1,3 @@
-"use client";
 "use client"
 
 import { Check, ArrowRight, Briefcase, FolderKanban } from "lucide-react"
@@ -67,7 +66,7 @@ export default function Workspace() {
             </span>
           </div>
 
-          <Progress value={67} className="h-2" />
+          <Progress value={67} className="h-2"  aria-label="Workspace progress" />
         </div>
 
         {/* Tasks */}
