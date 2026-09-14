@@ -471,52 +471,58 @@ const handleSubmit = (text?: string) => {
               {/* ERROR */}
               {/* ================================================= */}
 
-              {error && (
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-destructive">
-                        Something went wrong.
-                      </p>
+{error && (
+  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-medium text-destructive">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "AI usage limit reached."
+            : "Something went wrong."}
+        </p>
 
-                      <p className="mt-1 text-xs text-destructive/80">
-                        Alymera couldn&apos;t complete that
-                        request. Please try again.
-                      </p>
-                    </div>
+        <p className="mt-1 text-xs text-destructive/80">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "The AI assistant has temporarily reached its usage limit. Please try again later."
+            : "Alymera couldn&apos;t complete that request. Please try again."}
+        </p>
+      </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const lastUserMessage =
-                          [...messages]
-                            .reverse()
-                            .find(
-                              (message) =>
-                                message.role === "user"
-                            )
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          const lastUserMessage =
+            [...messages]
+              .reverse()
+              .find(
+                (message) =>
+                  message.role === "user"
+              )
 
-                        const textPart =
-                          lastUserMessage?.parts.find(
-                            (part) =>
-                              part.type === "text"
-                          )
+          const textPart =
+            lastUserMessage?.parts.find(
+              (part) =>
+                part.type === "text"
+            )
 
-                        if (textPart?.type === "text") {
-  handleSubmit(textPart.text)
-}
-                        
-                      }}
-                      className="w-full rounded-lg sm:w-auto"
-                    >
-                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                      Try again
-                    </Button>
-                  </div>
-                </div>
-              )}
+          if (textPart?.type === "text") {
+            handleSubmit(textPart.text)
+          }
+        }}
+        className="w-full rounded-lg sm:w-auto"
+      >
+        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+        Try again
+      </Button>
+    </div>
+  </div>
+)}
             </div>
           )}
         </ConversationContent>

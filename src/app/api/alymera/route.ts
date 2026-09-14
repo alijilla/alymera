@@ -1,5 +1,7 @@
-import { groq } from "@ai-sdk/groq"
-import { createOpenAI } from "@ai-sdk/openai"
+//import { groq } from "@ai-sdk/groq"
+//import { createOpenAI } from "@ai-sdk/openai"
+import { google } from "@ai-sdk/google"
+
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -10,6 +12,8 @@ import {
 } from "ai"
 
 import {
+  getCurrentProjectMilestones,
+   getCurrentProjectTasks,
   getProjects,
   getProjectTasks,
   getProjectMilestones,
@@ -32,12 +36,17 @@ import {
 } from "@/lib/ai/prompts"
 
 export const maxDuration = 30
+
 //const openrouter = createOpenAI({
-  //apiKey: process.env.OPENROUTER_API_KEY,
- // baseURL: "https://openrouter.ai/api/v1",
+//  apiKey: process.env.OPENROUTER_API_KEY,
+//  baseURL: "https://openrouter.ai/api/v1",
 //})
 
 export async function POST(req: Request) {
+  // ============================================================
+  // TOOLS
+  // ============================================================
+
   const projectTools = {
     getProjects,
     getProjectTasks,
@@ -61,18 +70,12 @@ export async function POST(req: Request) {
     ...careerTools,
   }
 
-  const codingTools = {
-    getProjects,
-    getProjectTasks,
-    getProjectMilestones,
-    getProjectProgress,
-    createProject,
-    createTask,
-    createMilestone,
-    UpdateTask,
-  }
 
   try {
+    // ============================================================
+    // REQUEST
+    // ============================================================
+
     const {
       messages,
       assistant,
@@ -92,7 +95,23 @@ export async function POST(req: Request) {
       projectId?: string
       conversationId?: string
     } = await req.json()
-
+const codingTools = {
+  getProjects,
+  ...(projectId
+    ? {
+        getCurrentProjectTasks: getCurrentProjectTasks(projectId),
+getCurrentProjectMilestones: getCurrentProjectMilestones(projectId),
+      }
+    : {
+        getProjectTasks,
+        getProjectMilestones,
+        getProjectProgress,
+      }),
+  createProject,
+  createTask,
+  createMilestone,
+  UpdateTask,
+}
     // ============================================================
     // VALIDATE ASSISTANT
     // ============================================================
@@ -136,10 +155,9 @@ export async function POST(req: Request) {
 
     let applicationContext = ""
 
-    // ------------------------------------------------------------
-    // If an application was selected, retrieve it from Supabase.
-    // We use the user's own application as the source of truth.
-    // ------------------------------------------------------------
+    // ============================================================
+    // APPLICATION CONTEXT
+    // ============================================================
 
     if (
       !demo &&
@@ -147,25 +165,27 @@ export async function POST(req: Request) {
       assistant === "career" &&
       applicationId
     ) {
-      const { data: application, error: applicationError } =
-        await supabase
-          .from("applications")
-          .select(
-            `
-              id,
-              company,
-              position,
-              location,
-              date_applied,
-              status,
-              job_description,
-              job_url,
-              notes
-            `
-          )
-          .eq("id", applicationId)
-          .eq("user_id", user.id)
-          .maybeSingle()
+      const {
+        data: application,
+        error: applicationError,
+      } = await supabase
+        .from("applications")
+        .select(
+          `
+            id,
+            company,
+            position,
+            location,
+            date_applied,
+            status,
+            job_description,
+            job_url,
+            notes
+          `
+        )
+        .eq("id", applicationId)
+        .eq("user_id", user.id)
+        .maybeSingle()
 
       if (applicationError) {
         console.error(
@@ -220,7 +240,7 @@ technologies, or company details that are not provided.
     }
 
     // ============================================================
-    // FIND EXISTING CONVERSATION CONTEXT
+    // FIND EXISTING CONVERSATION
     // ============================================================
 
     let existingConversation = null
@@ -267,8 +287,7 @@ technologies, or company details that are not provided.
 
       existingConversation = conversation
 
-      // If this is a later interview turn and the client
-      // didn't send the JD again, recover it from the conversation.
+      // Recover the saved JD for later interview turns.
       if (
         assistant === "career" &&
         feature === "interview" &&
@@ -291,33 +310,34 @@ technologies, or company details that are not provided.
       user &&
       !activeConversationId
     ) {
-   const { data: conversation, error: conversationError } =
-  await supabase
-    .from("conversations")
-    .insert({
-      user_id: user.id,
-      title: "New conversation",
-      assistant,
-      project_id:
-        assistant === "coding"
-          ? projectId ?? null
-          : null,
+      const {
+        data: conversation,
+        error: conversationError,
+      } = await supabase
+        .from("conversations")
+        .insert({
+          user_id: user.id,
 
-      job_description:
-        assistant === "career" &&
-        (feature === "job-matching" ||
-          feature === "interview")
-          ? resolvedJobDescription
-          : null,
+          title: "New conversation",
 
-      interview_status:
-        assistant === "career" &&
-        feature === "interview"
-          ? "active"
-          : null,
-    })
-    .select("id")
-    .single()
+          assistant,
+
+          project_id:
+            assistant === "coding"
+              ? projectId ?? null
+              : null,
+
+          job_description:
+            assistant === "career" &&
+            (
+              feature === "job-matching" ||
+              feature === "interview"
+            )
+              ? resolvedJobDescription
+              : null,
+        })
+        .select("id")
+        .single()
 
       if (conversationError) {
         console.error(
@@ -333,11 +353,12 @@ technologies, or company details that are not provided.
         )
       }
 
-      activeConversationId = conversation.id
+      activeConversationId =
+        conversation.id
     }
 
     // ============================================================
-    // SAVE / UPDATE JD ON EXISTING CONVERSATION
+    // SAVE / UPDATE JD
     // ============================================================
 
     if (
@@ -345,8 +366,10 @@ technologies, or company details that are not provided.
       user &&
       activeConversationId &&
       assistant === "career" &&
-      (feature === "job-matching" ||
-        feature === "interview") &&
+      (
+        feature === "job-matching" ||
+        feature === "interview"
+      ) &&
       resolvedJobDescription
     ) {
       const { error: updateError } =
@@ -356,8 +379,14 @@ technologies, or company details that are not provided.
             job_description:
               resolvedJobDescription,
           })
-          .eq("id", activeConversationId)
-          .eq("user_id", user.id)
+          .eq(
+            "id",
+            activeConversationId
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
 
       if (updateError) {
         console.error(
@@ -384,9 +413,9 @@ technologies, or company details that are not provided.
         ]
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // JOB MATCHING
-    // ------------------------------------------------------------
+    // ============================================================
 
     if (
       assistant === "career" &&
@@ -420,22 +449,22 @@ ${resolvedJobDescription}
 `
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // INTERVIEW
-    // ------------------------------------------------------------
+    // ============================================================
 
     if (
       assistant === "career" &&
       feature === "interview"
     ) {
       /*
-       * JD is OPTIONAL for interviews.
+       * JD is optional.
        *
        * If a JD exists:
-       *   → make the interview role-specific.
+       * → make the interview role-specific.
        *
        * If no JD exists:
-       *   → conduct general/resume-based interview practice.
+       * → conduct general/resume-based practice.
        */
 
       if (resolvedJobDescription) {
@@ -457,6 +486,7 @@ This interview is specifically for the target role
 described above.
 
 Use BOTH:
+
 1. The job description — what the employer is looking for.
 2. The user's saved resume — what the user actually knows,
    has built, and has experienced.
@@ -501,12 +531,13 @@ of a specific employer or role.
       user &&
       activeConversationId
     ) {
-      const latestUserMessage = [...messages]
-        .reverse()
-        .find(
-          (message) =>
-            message.role === "user"
-        )
+      const latestUserMessage =
+        [...messages]
+          .reverse()
+          .find(
+            (message) =>
+              message.role === "user"
+          )
 
       if (latestUserMessage) {
         const content =
@@ -522,26 +553,30 @@ of a specific employer or role.
             .join("\n")
 
         if (content.trim()) {
-          const { error: messageError } =
-            await supabase
-              .from("messages")
-              .insert({
-                conversation_id:
-                  activeConversationId,
-                role: "user",
-                content,
-                type:
-                  feature ===
-                  "resume-analysis"
-                    ? "resume-analysis"
+          const {
+            error: messageError,
+          } = await supabase
+            .from("messages")
+            .insert({
+              conversation_id:
+                activeConversationId,
+
+              role: "user",
+
+              content,
+
+              type:
+                feature ===
+                "resume-analysis"
+                  ? "resume-analysis"
+                  : feature ===
+                      "job-matching"
+                    ? "job-matching"
                     : feature ===
-                        "job-matching"
-                      ? "job-matching"
-                      : feature ===
-                          "interview"
-                        ? "interview"
-                        : "chat",
-              })
+                        "interview"
+                      ? "interview"
+                      : "chat",
+            })
 
           if (messageError) {
             console.error(
@@ -554,40 +589,47 @@ of a specific employer or role.
     }
 
     // ============================================================
-    // STREAM AI RESPONSE  {*/ model: openrouter("x-ai/grok-4.1-fast:free"),*/}
+    // STREAM AI RESPONSE
     // ============================================================
 
-    const result = streamText({
-   
-     model: groq("openai/gpt-oss-120b"),
+ let aiErrorMessage = "AI is temporarily unavailable. Please try again later."
 
-      system: basePrompt,
+const result = streamText({
+  model: google("gemini-3.6-flash"),
+  system: basePrompt,
+  messages: await convertToModelMessages(messages),
+  tools:
+    assistant === "alymera"
+      ? alymeraTools
+      : assistant === "career"
+        ? careerTools
+        : assistant === "coding"
+          ? codingTools
+          : undefined,
+  stopWhen: stepCountIs(5),
+  maxRetries: 0,
 
-      messages:
-        await convertToModelMessages(
-          messages
-        ),
+  onError: ({ error }) => {
+    console.error("AI STREAM ERROR:", error)
 
-      tools:
-        assistant === "alymera"
-          ? alymeraTools
-          : assistant === "career"
-            ? careerTools
-            : assistant === "coding"
-              ? codingTools
-              : undefined,
-      
+    const errorText = JSON.stringify(error).toLowerCase()
 
-      stopWhen: stepCountIs(5),
-
-       maxRetries: 0,
-    })
-
-    // ============================================================
+    if (
+      errorText.includes("429") ||
+      errorText.includes("quota") ||
+      errorText.includes("resource_exhausted") ||
+      errorText.includes("rate limit")
+    ) {
+      aiErrorMessage =
+        "AI usage limit reached. The AI assistant has temporarily reached its usage limit. Please try again later."
+    }
+  },
+})
+       // ============================================================
     // CREATE UI STREAM
     // ============================================================
 
-  const stream = createUIMessageStream({
+const stream = createUIMessageStream({
   originalMessages: messages,
 
   execute: async ({ writer }) => {
@@ -598,25 +640,17 @@ of a specific employer or role.
       })
     }
 
-    const uiStream = result.toUIMessageStream()
+    const uiStream = result.toUIMessageStream({
+      onError: () => {
+        return aiErrorMessage
+      },
+    })
 
     writer.merge(uiStream)
   },
 
-  onError: (error) => {
-    console.error("STREAM ERROR:", error)
 
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      error.status === 429
-    ) {
-      return "You've reached the AI usage limit. Please try again later."
-    }
 
-    return "AI is temporarily unavailable. Please try again later."
-  },
         // ========================================================
         // SAVE ASSISTANT RESPONSE
         // ========================================================
@@ -665,9 +699,12 @@ of a specific employer or role.
                     .insert({
                       conversation_id:
                         activeConversationId,
+
                       role: "assistant",
+
                       content:
                         assistantContent,
+
                       type:
                         feature ===
                         "resume-analysis"
@@ -692,7 +729,7 @@ of a specific employer or role.
               }
             }
 
-            // Update conversation timestamp
+            // Update conversation timestamp.
             await supabase
               .from("conversations")
               .update({
@@ -711,42 +748,46 @@ of a specific employer or role.
         },
       })
 
+    // ============================================================
+    // RETURN STREAM
+    // ============================================================
+
     return createUIMessageStreamResponse({
       stream,
     })
   } catch (error: unknown) {
-  console.error("AI error:", error)
+    console.error("AI error:", error)
 
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    error.status === 429
-  ) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      error.statusCode === 429
+    ) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "You've reached the AI usage limit. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+    }
+
     return new Response(
       JSON.stringify({
         error:
-          "You've reached the AI usage limit. Please try again later.",
+          "Something went wrong. Please try again.",
       }),
       {
-        status: 429,
+        status: 500,
         headers: {
           "Content-Type": "application/json",
         },
       }
     )
-  }
-
-  return new Response(
-    JSON.stringify({
-      error:
-        "Something went wrong. Please try again.",
-    }),
-    {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  )
-}}
+  }}

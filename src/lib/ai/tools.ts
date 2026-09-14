@@ -75,6 +75,37 @@ return {
 
 })
 
+
+// Get milestones for the current project
+export const getCurrentProjectMilestones = (projectId: string) =>
+  tool({
+    description:
+      "Get the milestones belonging to the current project workspace.",
+
+    inputSchema: z.object({}),
+
+    execute: async () => {
+      const supabase = await createClient()
+
+      const { data, error } = await supabase
+        .from("milestones")
+        .select(
+          "id, project_id, name, description, status, due_date"
+        )
+        .eq("project_id", projectId)
+
+      if (error) {
+        console.error("getCurrentProjectMilestones error:", error)
+        throw new Error("Failed to retrieve project milestones.")
+      }
+
+      return {
+        projectId,
+        milestones: data ?? [],
+      }
+    },
+  })
+
 //Get Applications
 export const getApplications = tool({
   description:
@@ -188,6 +219,35 @@ return {
 },
 })
 
+// Get tasks for the current project
+export const getCurrentProjectTasks = (projectId: string) =>
+  tool({
+    description:
+      "Get the tasks belonging to the current project workspace.",
+
+    inputSchema: z.object({}),
+
+    execute: async () => {
+      const supabase = await createClient()
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(
+          "id, project_id, name, description, status, due_date, milestone_id"
+        )
+        .eq("project_id", projectId)
+
+      if (error) {
+        console.error("getCurrentProjectTasks error:", error)
+        throw new Error("Failed to retrieve project tasks.")
+      }
+
+      return {
+        projectId,
+        tasks: data ?? [],
+      }
+    },
+  })
 
 //Create Project
 export const createProject = tool({
@@ -609,3 +669,104 @@ execute: async ({}) => {
   return getResumeData()
 },
 })
+
+export function createProjectContextTools(projectId: string) {
+  return {
+    getCurrentProjectTasks: tool({
+      description:
+        "Get the tasks belonging to the current project. The project is determined by the current workspace.",
+
+      inputSchema: z.object({}),
+
+      execute: async () => {
+        const supabase = await createClient()
+
+        const { data, error } = await supabase
+          .from("tasks")
+          .select(
+            "id, project_id, name, description, status, due_date, milestone_id"
+          )
+          .eq("project_id", projectId)
+
+        if (error) {
+          console.error("getCurrentProjectTasks error:", error)
+          throw new Error("Failed to retrieve project tasks.")
+        }
+
+        return {
+          projectId,
+          tasks: data ?? [],
+        }
+      },
+    }),
+
+    getCurrentProjectMilestones: tool({
+      description:
+        "Get the milestones belonging to the current project. The project is determined by the current workspace.",
+
+      inputSchema: z.object({}),
+
+      execute: async () => {
+        const supabase = await createClient()
+
+        const { data, error } = await supabase
+          .from("milestones")
+          .select("*")
+          .eq("project_id", projectId)
+
+        if (error) {
+          console.error("getCurrentProjectMilestones error:", error)
+          throw new Error("Failed to retrieve project milestones.")
+        }
+
+        return {
+          projectId,
+          milestones: data ?? [],
+        }
+      },
+    }),
+
+    getCurrentProjectProgress: tool({
+      description:
+        "Get the progress of the current project. The project is determined by the current workspace.",
+
+      inputSchema: z.object({}),
+
+      execute: async () => {
+        const supabase = await createClient()
+
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("project_id", projectId)
+
+        if (error) {
+          console.error("getCurrentProjectProgress error:", error)
+          throw new Error("Failed to retrieve project progress.")
+        }
+
+        const totalComplete = calculateTaskComplete(
+          data ?? [],
+          projectId
+        )
+
+        const totalTask = calculateTotalTask(
+          data ?? [],
+          projectId
+        )
+
+        const progress = calculateProgress(
+          totalComplete,
+          totalTask
+        )
+
+        return {
+          projectId,
+          totalComplete,
+          totalTask,
+          progress,
+        }
+      },
+    }),
+  }
+}

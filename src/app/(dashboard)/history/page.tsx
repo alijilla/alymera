@@ -158,7 +158,7 @@ const handleDeleteAll = async () => {
   )
 } else if (conversation.assistant === "career") {
       router.push(
-        `/career?conversationId=${id}`
+        `career/assistant?conversationId=${id}`
       )
     } else {
       router.push(

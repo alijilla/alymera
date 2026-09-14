@@ -6,7 +6,7 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import { supabase } from "@/lib/supabase/client"
-import { Sparkles } from "lucide-react"
+import { Bug, Lightbulb, ListTodo, Notebook, RotateCcw, Sparkle, Sparkles } from "lucide-react"
 import {
   Conversation,
   ConversationContent,
@@ -172,7 +172,7 @@ const handleSubmit = (text?: string) => {
       {/* Header */}
       <div className="border-b border-border/50 px-6 py-4 bg-muted/30">
         <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
-          <span className="text-primary">✨</span>
+          <span className="text-primary"><Sparkle className="w-4 h-4"/></span>
           Coding Assistant
         </h2>
 
@@ -216,7 +216,7 @@ const handleSubmit = (text?: string) => {
                   }
                 >
                   <span className="mr-3 text-orange-400 text-lg">
-                    ✨
+                   <ListTodo className="w-4 h-4"/>
                   </span>
 
                   <span className="font-semibold text-sm text-left text-foreground">
@@ -234,7 +234,7 @@ const handleSubmit = (text?: string) => {
                   }
                 >
                   <span className="mr-3 text-green-500 text-lg">
-                    🐛
+                    <Bug className="w-4 h-4" />
                   </span>
 
                   <span className="font-semibold text-sm text-left text-foreground">
@@ -252,7 +252,7 @@ const handleSubmit = (text?: string) => {
                   }
                 >
                   <span className="mr-3 text-blue-400 text-lg">
-                    💡
+                    <Lightbulb className="w-4 h-4" />
                   </span>
 
                   <span className="font-semibold text-sm text-left text-foreground">
@@ -270,7 +270,7 @@ const handleSubmit = (text?: string) => {
                   }
                 >
                   <span className="mr-3 text-purple-400 text-lg">
-                    📝
+                    <Notebook className="w-4 h-4" />
                   </span>
 
                   <span className="font-semibold text-sm text-left text-foreground">
@@ -406,10 +406,58 @@ const handleSubmit = (text?: string) => {
           
           {/* Error */}
           {error && (
-            <div className="text-sm text-destructive">
-              Sorry, something went wrong. Please try again.
-            </div>
-          )}
+  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-medium text-destructive">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "AI usage limit reached."
+            : "Something went wrong."}
+        </p>
+
+        <p className="mt-1 text-xs text-destructive/80">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "The AI assistant has temporarily reached its usage limit. Please try again later."
+            : "Alymera couldn&apos;t complete that request. Please try again."}
+        </p>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          const lastUserMessage =
+            [...messages]
+              .reverse()
+              .find(
+                (message) =>
+                  message.role === "user"
+              )
+
+          const textPart =
+            lastUserMessage?.parts.find(
+              (part) =>
+                part.type === "text"
+            )
+
+          if (textPart?.type === "text") {
+            handleSubmit(textPart.text)
+          }
+        }}
+        className="w-full rounded-lg sm:w-auto"
+      >
+        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+        Try again
+      </Button>
+    </div>
+  </div>
+)}
+        
 
         </ConversationContent>
 

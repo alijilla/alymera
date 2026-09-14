@@ -1,10 +1,12 @@
 "use client"
+
 import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
 import type { DynamicToolUIPart, ToolUIPart } from "ai"
+
 import {
   Conversation,
   ConversationContent,
@@ -36,6 +38,7 @@ import {
   Brain,
   ArrowLeft,
   X,
+  RotateCcw,
 } from "lucide-react"
 
 type CareerFeature =
@@ -81,7 +84,6 @@ export function CareerAssistant({
 
   const [interviewMode, setInterviewMode] =
     useState<InterviewMode>(null)
-    const interviewEndedRef = useRef(false)
 
   const [applications, setApplications] =
     useState<Application[]>([])
@@ -98,18 +100,20 @@ export function CareerAssistant({
 
   const [prompt, setPrompt] = useState("")
 
- 
-
   /*
-   * This stores the conversation ID created by the API
+   * Stores the conversation ID created by the API
    * when starting a brand-new conversation.
    */
- const [createdConversationId, setCreatedConversationId] =
-  useState<string | null>(null)
+  const [createdConversationId, setCreatedConversationId] =
+    useState<string | null>(null)
 
-const conversationId =
-  conversationIdProp ??
-  createdConversationId
+  const conversationId =
+    conversationIdProp ??
+    createdConversationId
+
+  // --------------------------------------------------
+  // Chat
+  // --------------------------------------------------
 
   const {
     messages,
@@ -130,7 +134,8 @@ const conversationId =
     }),
 
     sendAutomaticallyWhen:
-        lastAssistantMessageIsCompleteWithApprovalResponses,
+      lastAssistantMessageIsCompleteWithApprovalResponses,
+
     onData: (dataPart) => {
       if (
         dataPart.type ===
@@ -147,69 +152,66 @@ const conversationId =
     },
   })
 
-useEffect(() => {
-  console.log("CAREER MESSAGES:", messages)
-  console.log("CAREER STATUS:", status)
-}, [messages, status])
   // --------------------------------------------------
   // Load Existing Conversation
   // --------------------------------------------------
 
- useEffect(() => {
-  if (!conversationIdProp) {
-    return
-  }
-
-  async function loadConversation() {
-    const { data, error } =
-      await supabase
-        .from("messages")
-        .select(
-          "id, role, content, type"
-        )
-        .eq(
-          "conversation_id",
-          conversationIdProp
-        )
-        .order("created_at", {
-          ascending: true,
-        })
-
-    if (error) {
-      console.error(
-        "Failed to load conversation:",
-        error
-      )
-
+  useEffect(() => {
+    if (!conversationIdProp) {
       return
     }
 
-    const restoredMessages =
-      (data ?? []).map(
-        (message) => ({
-          id: message.id,
+    async function loadConversation() {
+      const { data, error } =
+        await supabase
+          .from("messages")
+          .select(
+            "id, role, content, type"
+          )
+          .eq(
+            "conversation_id",
+            conversationIdProp
+          )
+          .order("created_at", {
+            ascending: true,
+          })
 
-          role: message.role as
-            | "user"
-            | "assistant",
+      if (error) {
+        console.error(
+          "Failed to load conversation:",
+          error
+        )
 
-          parts: [
-            {
-              type: "text" as const,
-              text: message.content,
-            },
-          ],
-        })
-      )
+        return
+      }
 
-    setMessages(restoredMessages)
-  }
+      const restoredMessages =
+        (data ?? []).map(
+          (message) => ({
+            id: message.id,
 
-  loadConversation()
-}, [
-  conversationIdProp,
-  setMessages,
-])
+            role: message.role as
+              | "user"
+              | "assistant",
+
+            parts: [
+              {
+                type: "text" as const,
+                text: message.content,
+              },
+            ],
+          })
+        )
+
+      setMessages(restoredMessages)
+    }
+
+    loadConversation()
+  }, [
+    conversationIdProp,
+    setMessages,
+  ])
+
   // --------------------------------------------------
   // Loading State
   // --------------------------------------------------
@@ -258,55 +260,50 @@ useEffect(() => {
   // --------------------------------------------------
 
   const loadApplications = async () => {
-  setLoadingApplications(true)
+    setLoadingApplications(true)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    setApplications([])
+    if (!user) {
+      setApplications([])
+      setLoadingApplications(false)
+      return
+    }
+
+    const { data, error } =
+      await supabase
+        .from("applications")
+        .select(
+          "id, company, position, location, date_applied, status, job_description, job_url, notes, created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        })
+
+    if (error) {
+      console.error(
+        "Failed to load applications:",
+        error
+      )
+
+      setLoadingApplications(false)
+      return
+    }
+
+    setApplications(data ?? [])
     setLoadingApplications(false)
-    return
   }
 
-  const { data, error } = await supabase
-    .from("applications")
-    .select(
-      "id, company, position, location, date_applied, status, job_description, job_url, notes, created_at"
-    )
-    .eq("user_id", user.id)
-    .order("created_at", {
-      ascending: false,
-    })
-
-  if (error) {
-    console.error(
-      "Failed to load applications:",
-      error
-    )
-
-    setLoadingApplications(false)
-    return
-  }
-
-  setApplications(data ?? [])
-  setLoadingApplications(false)
-}
   // --------------------------------------------------
-  // Normal Chat
+  // Submit Message
   // --------------------------------------------------
 
   const handleSubmit = (
     text?: string
   ) => {
-
-        if (
-  activeFeature === "interview" &&
-  interviewEndedRef.current
-) {
-  return
-}
     const message =
       (text ?? prompt).trim()
 
@@ -317,13 +314,9 @@ useEffect(() => {
       return
     }
 
-
-
-    /*
-     * ----------------------------------------------
-     * Job Matching
-     * ----------------------------------------------
-     */
+    // ------------------------------------------------
+    // Job Matching
+    // ------------------------------------------------
 
     if (
       activeFeature ===
@@ -351,11 +344,9 @@ useEffect(() => {
       return
     }
 
-    /*
-     * ----------------------------------------------
-     * Interview - Paste JD
-     * ----------------------------------------------
-     */
+    // ------------------------------------------------
+    // Interview - Paste Job Description
+    // ------------------------------------------------
 
     if (
       activeFeature ===
@@ -387,11 +378,9 @@ useEffect(() => {
       return
     }
 
-    /*
-     * ----------------------------------------------
-     * Interview Answer
-     * ----------------------------------------------
-     */
+    // ------------------------------------------------
+    // Interview Answer
+    // ------------------------------------------------
 
     if (
       activeFeature ===
@@ -416,13 +405,9 @@ useEffect(() => {
       return
     }
 
-
-   
-    /*
-     * ----------------------------------------------
-     * Normal Career Chat
-     * ----------------------------------------------
-     */
+    // ------------------------------------------------
+    // Normal Career Chat
+    // ------------------------------------------------
 
     setActiveFeature(null)
 
@@ -442,36 +427,70 @@ useEffect(() => {
     setPrompt("")
   }
 
+  // --------------------------------------------------
+  // Quick Prompt
+  // --------------------------------------------------
+
   const handlePromptClick = (
     text: string
   ) => {
     handleSubmit(text)
   }
 
+  // --------------------------------------------------
+  // Tool Labels
+  // --------------------------------------------------
 
-    const getToolLabel = (toolName: string) => {
-      const labels: Record<string, string> = {
-        getProjects: "Checking your projects",
-        getProjectTasks: "Checking your tasks",
-        getProjectMilestones: "Checking your milestones",
-        getProjectProgress: "Checking project progress",
-          
-  
-        getApplications: "Checking your applications",
-        getResume: "Checking your resume",
-  
-        createApplication: "Creating your application",
-        UpdateApplication: "Updating your application",
-      }
-  
-      return labels[toolName] ?? "Working on it"
+  const getToolLabel = (
+    toolName: string
+  ) => {
+    const labels: Record<
+      string,
+      string
+    > = {
+      getProjects:
+        "Checking your projects",
+
+      getProjectTasks:
+        "Checking your tasks",
+
+      getProjectMilestones:
+        "Checking your milestones",
+
+      getProjectProgress:
+        "Checking project progress",
+
+      getApplications:
+        "Checking your applications",
+
+      getResume:
+        "Checking your resume",
+
+      createApplication:
+        "Creating your application",
+
+      UpdateApplication:
+        "Updating your application",
     }
-  
-  
-    function isToolPart(
+
+    return (
+      labels[toolName] ??
+      "Working on it"
+    )
+  }
+
+  // --------------------------------------------------
+  // Tool Part Helper
+  // --------------------------------------------------
+
+  function isToolPart(
     part: { type: string }
-  ): part is ToolUIPart | DynamicToolUIPart {
-    return part.type.startsWith("tool-")
+  ): part is
+    | ToolUIPart
+    | DynamicToolUIPart {
+    return part.type.startsWith(
+      "tool-"
+    )
   }
 
   // --------------------------------------------------
@@ -491,7 +510,8 @@ useEffect(() => {
 
     sendMessage(
       {
-        text: "Analyze my saved resume.",
+        text:
+          "Analyze my saved resume.",
       },
       {
         body: {
@@ -518,7 +538,6 @@ useEffect(() => {
     )
 
     setInterviewMode(null)
-
     setPrompt("")
   }
 
@@ -532,7 +551,7 @@ useEffect(() => {
     }
 
     /*
-     * Don't immediately send a message.
+     * Do not immediately send an AI message.
      *
      * First let the user choose:
      *
@@ -541,9 +560,9 @@ useEffect(() => {
      * 3. General Practice
      */
 
-    interviewEndedRef.current = false
-
-  setActiveFeature("interview")
+    setActiveFeature(
+      "interview"
+    )
 
     setInterviewMode(
       "choose"
@@ -588,13 +607,9 @@ useEffect(() => {
       }
 
       const jobDescription =
-        selectedApplication.job_description?.trim()
-
-      /*
-       * If there is no JD saved, we can still start
-       * a general interview using the application
-       * context. The API will handle this later.
-       */
+        selectedApplication
+          .job_description
+          ?.trim()
 
       sendMessage(
         {
@@ -696,43 +711,11 @@ Ask me ONE interview question at a time.`,
     }
 
     setActiveFeature(null)
-
     setInterviewMode(null)
-
-    setSelectedApplication(
-      null
-    )
-
+    setSelectedApplication(null)
     setPrompt("")
   }
 
-
-
-   const handleEndInterview = async () => {
-      interviewEndedRef.current = true
-  stop()
-
-   if (conversationId) {
-    const { error } = await supabase
-      .from("conversations")
-      .update({
-        interview_status: "ended",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", conversationId)
-
-    if (error) {
-      console.error(
-        "Failed to end interview:",
-        error
-      )
-    }
-  }
-
-  setActiveFeature(null)
-  setInterviewMode(null)
-  setPrompt("")
-}
   // --------------------------------------------------
   // UI
   // --------------------------------------------------
@@ -922,439 +905,6 @@ Ask me ONE interview question at a time.`,
                   </Button>
 
                 </div>
-              </div>
-            )}
-
-          {/* ==================================================
-              INTERVIEW SETUP
-          ================================================== */}
-
-          {messages.length === 0 &&
-            activeFeature ===
-              "interview" && (
-              <div className="flex min-h-full w-full items-center justify-center px-2 py-8">
-
-                <div className="w-full max-w-2xl">
-
-                  {/* ------------------------------------------
-                      CHOOSE INTERVIEW MODE
-                  ------------------------------------------ */}
-
-                  {interviewMode ===
-                    "choose" && (
-                    <div className="text-center">
-
-                      <div className="mb-4 inline-flex rounded-full border border-primary/20 bg-primary/10 p-4 shadow-sm">
-
-                        <Brain className="h-6 w-6 text-primary" />
-
-                      </div>
-
-                      <h3 className="text-lg font-bold text-foreground sm:text-xl">
-                        Interview Prep
-                      </h3>
-
-                      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-                        Choose how you want to practice.
-                        Alymera can tailor the interview
-                        to a specific job or help you
-                        practice generally.
-                      </p>
-
-                      <div className="mt-7 space-y-3">
-
-                        {/* Application */}
-
-                        <Button
-                          variant="outline"
-                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
-                          onClick={() =>
-                            setInterviewMode(
-                              "application"
-                            )
-                          }
-                        >
-
-                          <Briefcase className="mr-4 h-6 w-6 shrink-0 text-primary" />
-
-                          <div className="min-w-0">
-
-                            <div className="text-sm font-semibold text-foreground">
-                              Practice for an application
-                            </div>
-
-                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                              Choose a job from your Application Tracker.
-                            </div>
-
-                          </div>
-
-                        </Button>
-
-                        {/* Paste JD */}
-
-                        <Button
-                          variant="outline"
-                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
-                          onClick={() =>
-                            setInterviewMode(
-                              "job-description"
-                            )
-                          }
-                        >
-
-                          <FileText className="mr-4 h-6 w-6 shrink-0 text-primary" />
-
-                          <div className="min-w-0">
-
-                            <div className="text-sm font-semibold text-foreground">
-                              Use a job description
-                            </div>
-
-                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                              Paste a JD for a specific role.
-                            </div>
-
-                          </div>
-
-                        </Button>
-
-                        {/* General */}
-
-                        <Button
-                          variant="outline"
-                          className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
-                          onClick={
-                            startGeneralInterview
-                          }
-                        >
-
-                          <Brain className="mr-4 h-6 w-6 shrink-0 text-primary" />
-
-                          <div className="min-w-0">
-
-                            <div className="text-sm font-semibold text-foreground">
-                              General practice
-                            </div>
-
-                            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                              Practice without a specific job.
-                            </div>
-
-                          </div>
-
-                        </Button>
-
-                      </div>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-5"
-                        onClick={
-                          cancelInterview
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                      </Button>
-
-                    </div>
-                  )}
-
-                  {/* ------------------------------------------
-                      APPLICATION LIST
-                  ------------------------------------------ */}
-
-                  {interviewMode ===
-                    "application" &&
-                    !selectedApplication && (
-                    <div>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={
-                          backToInterviewChoices
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                      </Button>
-
-                      <div className="mt-4 text-center">
-
-                        <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
-
-                          <Briefcase className="h-5 w-5 text-primary" />
-
-                        </div>
-
-                        <h3 className="text-lg font-bold">
-                          Choose an application
-                        </h3>
-
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          Alymera will use the saved
-                          application details and job
-                          description to make the interview
-                          more relevant.
-                        </p>
-
-                      </div>
-
-                      <div className="mt-6 space-y-3">
-
-                        {loadingApplications ? (
-                          <div className="rounded-xl border border-border/50 bg-card p-6 text-center text-sm text-muted-foreground">
-                            Loading your applications...
-                          </div>
-                        ) : applications.length ===
-                          0 ? (
-                          <div className="rounded-xl border border-border/50 bg-card p-6 text-center">
-
-                            <Briefcase className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
-
-                            <p className="text-sm font-semibold">
-                              No applications found
-                            </p>
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Add a job to your Application
-                              Tracker first.
-                            </p>
-
-                          </div>
-                        ) : (
-                          applications.map(
-                            (
-                              application
-                            ) => (
-                              <button
-                                key={
-                                  application.id
-                                }
-                                type="button"
-                                onClick={() =>
-                                  selectApplication(
-                                    application
-                                  )
-                                }
-                                className="w-full rounded-xl border border-border/50 bg-card p-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
-                              >
-
-                                <div className="flex items-start justify-between gap-3">
-
-                                  <div className="min-w-0">
-
-                                    <div className="truncate text-sm font-semibold text-foreground">
-                                      {
-                                        application.position
-                                      }
-                                    </div>
-
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                      {
-                                        application.company
-                                      }
-                                    </div>
-
-                                  </div>
-
-                                  {application.status && (
-                                    <span className="shrink-0 rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                                      {
-                                        application.status
-                                      }
-                                    </span>
-                                  )}
-
-                                </div>
-
-                              </button>
-                            )
-                          )
-                        )}
-
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* ------------------------------------------
-                      SELECTED APPLICATION
-                  ------------------------------------------ */}
-
-                  {interviewMode ===
-                    "application" &&
-                    selectedApplication && (
-                    <div>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setSelectedApplication(
-                            null
-                          )
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Applications
-                      </Button>
-
-                      <div className="mt-5 rounded-xl border border-border/50 bg-card p-5">
-
-                        <div className="flex items-start gap-3">
-
-                          <div className="rounded-lg bg-primary/10 p-2">
-
-                            <Briefcase className="h-5 w-5 text-primary" />
-
-                          </div>
-
-                          <div className="min-w-0">
-
-                            <h3 className="text-sm font-semibold">
-                              {
-                                selectedApplication.position
-                              }
-                            </h3>
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {
-                                selectedApplication.company
-                              }
-                            </p>
-
-                            {selectedApplication.status && (
-                              <span className="mt-2 inline-block rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                                {
-                                  selectedApplication.status
-                                }
-                              </span>
-                            )}
-
-                          </div>
-
-                        </div>
-
-                        <div className="mt-5 rounded-lg bg-muted/40 p-3">
-
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-
-                            {selectedApplication.job_description
-                              ? "The saved job description will be used to tailor your interview."
-                              : "This application does not have a saved job description. You can still practice based on your resume and application details."}
-
-                          </p>
-
-                        </div>
-
-                        <Button
-                          className="mt-4 w-full"
-                          onClick={
-                            startApplicationInterview
-                          }
-                          disabled={
-                            isLoading
-                          }
-                        >
-                          Start Interview
-                        </Button>
-
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* ------------------------------------------
-                      PASTE JOB DESCRIPTION
-                  ------------------------------------------ */}
-
-                  {interviewMode ===
-                    "job-description" && (
-                    <div>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={
-                          backToInterviewChoices
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                      </Button>
-
-                      <div className="mt-5 text-center">
-
-                        <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
-
-                          <FileText className="h-5 w-5 text-primary" />
-
-                        </div>
-
-                        <h3 className="text-lg font-bold">
-                          Use a job description
-                        </h3>
-
-                        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                          Paste the job description below.
-                          Alymera will use it with your
-                          saved resume to create a
-                          role-specific interview.
-                        </p>
-
-                      </div>
-
-                      <div className="mt-6">
-
-                        <PromptInput
-                          onSubmit={(
-                            message
-                          ) => {
-                            handleSubmit(
-                              message.text
-                            )
-                          }}
-                          className="rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10"
-                        >
-
-                          <PromptInputTextarea
-                            placeholder="Paste the job description here..."
-                            value={prompt}
-                            className="min-h-[150px] max-h-[300px] resize-none rounded-2xl border-0 py-3 focus-visible:ring-0"
-                            onChange={(
-                              e
-                            ) =>
-                              setPrompt(
-                                e.target.value
-                              )
-                            }
-                          />
-
-                          <div className="flex flex-col justify-end p-2">
-
-                            <PromptInputSubmit
-                              aria-label="Start interview"
-                              className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
-                              disabled={
-                                !prompt.trim() ||
-                                isLoading
-                              }
-                            />
-
-                          </div>
-
-                        </PromptInput>
-
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
 
               </div>
             )}
@@ -1377,134 +927,597 @@ Ask me ONE interview question at a time.`,
                       | "assistant"
                   }
                 >
-{message.parts.map((part, index) => {
-  // --------------------------------------------------
-  // TEXT MESSAGE
-  // --------------------------------------------------
 
-  if (part.type === "text") {
-    return (
-      <MessageResponse key={index}>
-        {part.text}
-      </MessageResponse>
-    )
-  }
+                  {message.parts.map(
+                    (
+                      part,
+                      index
+                    ) => {
 
-  // --------------------------------------------------
-  // TOOL MESSAGE
-  // --------------------------------------------------
+                      // ----------------------------------------
+                      // TEXT MESSAGE
+                      // ----------------------------------------
 
-  if (isToolPart(part)) {
-    const toolName = part.type.replace(
-      "tool-",
-      ""
-    )
+                      if (
+                        part.type ===
+                        "text"
+                      ) {
+                        return (
+                          <MessageResponse
+                            key={index}
+                          >
+                            {
+                              part.text
+                            }
+                          </MessageResponse>
+                        )
+                      }
 
-    // ------------------------------------------------
-    // APPROVAL REQUEST
-    // ------------------------------------------------
+                      // ----------------------------------------
+                      // TOOL MESSAGE
+                      // ----------------------------------------
 
-    if (
-      part.state ===
-      "approval-requested"
-    ) {
-      return (
-        <div
-          key={index}
-          className="rounded-lg border p-3"
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <Sparkles className="size-4" />
+                      if (
+                        isToolPart(
+                          part
+                        )
+                      ) {
 
-            <span className="font-medium">
-              {getToolLabel(toolName)}
-            </span>
-          </div>
+                        const toolName =
+                          part.type.replace(
+                            "tool-",
+                            ""
+                          )
 
-          <p className="mb-3 text-sm text-muted-foreground">
-            Alymera wants to perform this
-            action. Do you want to approve it?
-          </p>
+                        // ------------------------------------
+                        // APPROVAL REQUEST
+                        // ------------------------------------
 
-          <div className="flex gap-2">
-            {/* DENY */}
+                        if (
+                          part.state ===
+                          "approval-requested"
+                        ) {
+                          return (
+                            <div
+                              key={index}
+                              className="rounded-lg border p-3"
+                            >
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                console.log(
-                  "DENYING TOOL:",
-                  {
-                    approvalId:
-                      part.approval.id,
-                    toolName,
-                  }
-                )
+                              <div className="mb-2 flex items-center gap-2">
 
-                addToolApprovalResponse({
-                  id: part.approval.id,
-                  approved: false,
-                  reason:
-                    "User denied the action",
-                })
-              }}
-            >
-              Deny
-            </Button>
+                                <Sparkles className="size-4" />
 
-            {/* APPROVE */}
+                                <span className="font-medium">
+                                  {
+                                    getToolLabel(
+                                      toolName
+                                    )
+                                  }
+                                </span>
 
-            <Button
-              type="button"
-              onClick={() => {
-                console.log(
-                  "APPROVING TOOL:",
-                  {
-                    approvalId:
-                      part.approval.id,
-                    toolName,
-                  }
-                )
+                              </div>
 
-                addToolApprovalResponse({
-                  id: part.approval.id,
-                  approved: true,
-                })
-              }}
-            >
-              Approve
-            </Button>
-          </div>
-        </div>
-      )
-    }
+                              <p className="mb-3 text-sm text-muted-foreground">
+                                Alymera wants to perform this
+                                action. Do you want to approve it?
+                              </p>
 
-    // ------------------------------------------------
-    // TOOL EXECUTED / OTHER TOOL STATES
-    // ------------------------------------------------
+                              <div className="flex gap-2">
 
-    return (
-      <div
-        key={index}
-        className="my-2 flex w-fit max-w-full items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2 shadow-sm"
-      >
-        <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                                {/* DENY */}
 
-        <span className="break-words text-sm font-medium text-muted-foreground">
-          {getToolLabel(toolName)}
-        </span>
-      </div>
-    )
-  }
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    addToolApprovalResponse(
+                                      {
+                                        id:
+                                          part.approval.id,
+                                        approved:
+                                          false,
+                                        reason:
+                                          "User denied the action",
+                                      }
+                                    )
+                                  }}
+                                >
+                                  Deny
+                                </Button>
 
-  return null
-})}
+                                {/* APPROVE */}
+
+                                <Button
+                                  type="button"
+                                  onClick={() => {
+                                    addToolApprovalResponse(
+                                      {
+                                        id:
+                                          part.approval.id,
+                                        approved:
+                                          true,
+                                      }
+                                    )
+                                  }}
+                                >
+                                  Approve
+                                </Button>
+
+                              </div>
+
+                            </div>
+                          )
+                        }
+
+                        // ------------------------------------
+                        // TOOL EXECUTED / OTHER TOOL STATES
+                        // ------------------------------------
+
+                        return (
+                          <div
+                            key={index}
+                            className="my-2 flex w-fit max-w-full items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2 shadow-sm"
+                          >
+
+                            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+
+                            <span className="break-words text-sm font-medium text-muted-foreground">
+                              {
+                                getToolLabel(
+                                  toolName
+                                )
+                              }
+                            </span>
+
+                          </div>
+                        )
+                      }
+
+                      return null
+                    }
+                  )}
 
                 </MessageContent>
 
               </Message>
             )
+          )}
+
+          {/* ==================================================
+              INTERVIEW SETUP
+              
+              IMPORTANT:
+              This comes AFTER messages so previous conversation
+              stays above the interview setup.
+          ================================================== */}
+
+          {activeFeature ===
+            "interview" && (
+            <div className="w-full px-2 py-4 sm:px-4 sm:py-6">
+
+              <div className="mx-auto w-full max-w-2xl">
+
+                {/* ------------------------------------------
+                    CHOOSE INTERVIEW MODE
+                ------------------------------------------ */}
+
+                {interviewMode ===
+                  "choose" && (
+                  <div className="text-center">
+
+                    <div className="mb-4 inline-flex rounded-full border border-primary/20 bg-primary/10 p-4 shadow-sm">
+
+                      <Brain className="h-6 w-6 text-primary" />
+
+                    </div>
+
+                    <h3 className="text-lg font-bold text-foreground sm:text-xl">
+                      Interview Prep
+                    </h3>
+
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                      Choose how you want to practice.
+                      Alymera can tailor the interview
+                      to a specific job or help you
+                      practice generally.
+                    </p>
+
+                    <div className="mt-7 space-y-3">
+
+                      {/* Application */}
+
+                      <Button
+                        variant="outline"
+                        className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                        onClick={() =>
+                          setInterviewMode(
+                            "application"
+                          )
+                        }
+                      >
+
+                        <Briefcase className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                        <div className="min-w-0">
+
+                          <div className="text-sm font-semibold text-foreground">
+                            Practice for an application
+                          </div>
+
+                          <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            Choose a job from your Application Tracker.
+                          </div>
+
+                        </div>
+
+                      </Button>
+
+                      {/* Paste JD */}
+
+                      <Button
+                        variant="outline"
+                        className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                        onClick={() =>
+                          setInterviewMode(
+                            "job-description"
+                          )
+                        }
+                      >
+
+                        <FileText className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                        <div className="min-w-0">
+
+                          <div className="text-sm font-semibold text-foreground">
+                            Use a job description
+                          </div>
+
+                          <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            Paste a JD for a specific role.
+                          </div>
+
+                        </div>
+
+                      </Button>
+
+                      {/* General */}
+
+                      <Button
+                        variant="outline"
+                        className="h-auto min-h-[82px] w-full justify-start rounded-xl border-border/50 bg-card px-4 py-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                        onClick={
+                          startGeneralInterview
+                        }
+                      >
+
+                        <Brain className="mr-4 h-6 w-6 shrink-0 text-primary" />
+
+                        <div className="min-w-0">
+
+                          <div className="text-sm font-semibold text-foreground">
+                            General practice
+                          </div>
+
+                          <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            Practice without a specific job.
+                          </div>
+
+                        </div>
+
+                      </Button>
+
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-5"
+                      onClick={
+                        cancelInterview
+                      }
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+
+                  </div>
+                )}
+
+                {/* ------------------------------------------
+                    APPLICATION LIST
+                ------------------------------------------ */}
+
+                {interviewMode ===
+                  "application" &&
+                  !selectedApplication && (
+                  <div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={
+                        backToInterviewChoices
+                      }
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+
+                    <div className="mt-4 text-center">
+
+                      <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
+
+                        <Briefcase className="h-5 w-5 text-primary" />
+
+                      </div>
+
+                      <h3 className="text-lg font-bold">
+                        Choose an application
+                      </h3>
+
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Alymera will use the saved
+                        application details and job
+                        description to make the interview
+                        more relevant.
+                      </p>
+
+                    </div>
+
+                    <div className="mt-6 space-y-3">
+
+                      {loadingApplications ? (
+                        <div className="rounded-xl border border-border/50 bg-card p-6 text-center text-sm text-muted-foreground">
+                          Loading your applications...
+                        </div>
+                      ) : applications.length ===
+                        0 ? (
+                        <div className="rounded-xl border border-border/50 bg-card p-6 text-center">
+
+                          <Briefcase className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+
+                          <p className="text-sm font-semibold">
+                            No applications found
+                          </p>
+
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Add a job to your Application
+                            Tracker first.
+                          </p>
+
+                        </div>
+                      ) : (
+                        applications.map(
+                          (
+                            application
+                          ) => (
+                            <button
+                              key={
+                                application.id
+                              }
+                              type="button"
+                              onClick={() =>
+                                selectApplication(
+                                  application
+                                )
+                              }
+                              className="w-full rounded-xl border border-border/50 bg-card p-4 text-left transition-all hover:border-primary/30 hover:bg-muted/50"
+                            >
+
+                              <div className="flex items-start justify-between gap-3">
+
+                                <div className="min-w-0">
+
+                                  <div className="truncate text-sm font-semibold text-foreground">
+                                    {
+                                      application.position
+                                    }
+                                  </div>
+
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    {
+                                      application.company
+                                    }
+                                  </div>
+
+                                </div>
+
+                                {application.status && (
+                                  <span className="shrink-0 rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                                    {
+                                      application.status
+                                    }
+                                  </span>
+                                )}
+
+                              </div>
+
+                            </button>
+                          )
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+                )}
+
+                {/* ------------------------------------------
+                    SELECTED APPLICATION
+                ------------------------------------------ */}
+
+                {interviewMode ===
+                  "application" &&
+                  selectedApplication && (
+                  <div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setSelectedApplication(
+                          null
+                        )
+                      }
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Applications
+                    </Button>
+
+                    <div className="mt-5 rounded-xl border border-border/50 bg-card p-5">
+
+                      <div className="flex items-start gap-3">
+
+                        <div className="rounded-lg bg-primary/10 p-2">
+
+                          <Briefcase className="h-5 w-5 text-primary" />
+
+                        </div>
+
+                        <div className="min-w-0">
+
+                          <h3 className="text-sm font-semibold">
+                            {
+                              selectedApplication.position
+                            }
+                          </h3>
+
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {
+                              selectedApplication.company
+                            }
+                          </p>
+
+                          {selectedApplication.status && (
+                            <span className="mt-2 inline-block rounded-full border border-border/50 bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                              {
+                                selectedApplication.status
+                              }
+                            </span>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                      <div className="mt-5 rounded-lg bg-muted/40 p-3">
+
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+
+                          {selectedApplication.job_description
+                            ? "The saved job description will be used to tailor your interview."
+                            : "This application does not have a saved job description. You can still practice based on your resume and application details."}
+
+                        </p>
+
+                      </div>
+
+                      <Button
+                        className="mt-4 w-full"
+                        onClick={
+                          startApplicationInterview
+                        }
+                        disabled={
+                          isLoading
+                        }
+                      >
+                        Start Interview
+                      </Button>
+
+                    </div>
+
+                  </div>
+                )}
+
+                {/* ------------------------------------------
+                    PASTE JOB DESCRIPTION
+                ------------------------------------------ */}
+
+                {interviewMode ===
+                  "job-description" && (
+                  <div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={
+                        backToInterviewChoices
+                      }
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+
+                    <div className="mt-5 text-center">
+
+                      <div className="mb-3 inline-flex rounded-full border border-primary/20 bg-primary/10 p-3">
+
+                        <FileText className="h-5 w-5 text-primary" />
+
+                      </div>
+
+                      <h3 className="text-lg font-bold">
+                        Use a job description
+                      </h3>
+
+                      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                        Paste the job description below.
+                        Alymera will use it with your
+                        saved resume to create a
+                        role-specific interview.
+                      </p>
+
+                    </div>
+
+                    <div className="mt-6">
+
+                      <PromptInput
+                        onSubmit={(
+                          message
+                        ) => {
+                          handleSubmit(
+                            message.text
+                          )
+                        }}
+                        className="rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10"
+                      >
+
+                        <PromptInputTextarea
+                          placeholder="Paste the job description here..."
+                          value={prompt}
+                          className="min-h-[150px] max-h-[300px] resize-none rounded-2xl border-0 py-3 focus-visible:ring-0"
+                          onChange={(
+                            e
+                          ) =>
+                            setPrompt(
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        <div className="flex flex-col justify-end p-2">
+
+                          <PromptInputSubmit
+                            aria-label="Start interview"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+                            disabled={
+                              !prompt.trim() ||
+                              isLoading
+                            }
+                          />
+
+                        </div>
+
+                      </PromptInput>
+
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
+            </div>
           )}
 
           {/* ==================================================
@@ -1586,11 +1599,58 @@ Ask me ONE interview question at a time.`,
               ERROR
           ================================================== */}
 
-          {error && (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-              {error.message}
-            </div>
-          )}
+         {error && (
+  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-medium text-destructive">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "AI usage limit reached."
+            : "Something went wrong."}
+        </p>
+
+        <p className="mt-1 text-xs text-destructive/80">
+          {error.message?.includes("429") ||
+          error.message?.toLowerCase().includes("quota") ||
+          error.message?.toLowerCase().includes("rate limit")
+            ? "The AI assistant has temporarily reached its usage limit. Please try again later."
+            : "Alymera couldn&apos;t complete that request. Please try again."}
+        </p>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          const lastUserMessage =
+            [...messages]
+              .reverse()
+              .find(
+                (message) =>
+                  message.role === "user"
+              )
+
+          const textPart =
+            lastUserMessage?.parts.find(
+              (part) =>
+                part.type === "text"
+            )
+
+          if (textPart?.type === "text") {
+            handleSubmit(textPart.text)
+          }
+        }}
+        className="w-full rounded-lg sm:w-auto"
+      >
+        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+        Try again
+      </Button>
+    </div>
+  </div>
+)}
 
         </ConversationContent>
 
@@ -1615,74 +1675,93 @@ Ask me ONE interview question at a time.`,
             <div className="flex flex-row rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
 
               <p className="text-xs font-medium text-primary">
+
                 Job Matching
-                 <br></br>
-                <span className="mt-0.5 text-xs text-muted-foreground" > Paste the job description into
-                the message box below.</span>
+
+                <br />
+
+                <span className="mt-0.5 text-xs text-muted-foreground">
+                  Paste the job description into
+                  the message box below.
+                </span>
+
               </p>
 
-            
-              <div className="flex-1"></div>
-               <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => {
-        setActiveFeature(null)
-        setPrompt("")
-      }}
-    >
-     <X className="h-4 w-4" />
-    </Button>
-            </div>
-          )}
+              <div className="flex-1" />
 
-          
-
-          {activeFeature ===
-            "interview" &&
-            messages.length > 0 && (
-            <div className="flex flex-row rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
-
-              <p className="text-xs font-medium text-primary">
-                Interview Prep
-                <br></br>
-             <span className="mt-0.5 text-xs text-muted-foreground">
-                Answer the interview question
-                naturally. Alymera will evaluate
-                your answer and continue.
-              </span>
-              </p>
-              
-
-
-           <div className="flex-1"> </div>
-              <div className="flex-1"></div>
-               <Button
-      variant="ghost"
-      size="icon"
-      onClick={handleEndInterview}
-    >
-    <X className="h-4 w-4" />
-    </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setActiveFeature(null)
+                  setPrompt("")
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
 
             </div>
           )}
 
           {/* ==================================================
-              CHAT INPUT
+              INTERVIEW STATUS / INSTRUCTIONS
           ================================================== */}
 
-          {/*
-           * Hide the normal bottom input while the user is
-           * choosing an interview mode.
-           *
-           * The JD mode has its own input above.
-           */}
+         {activeFeature ===
+  "interview" &&
+  interviewMode === null && (
+  <div className="flex flex-row rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
+
+    <p className="text-xs font-medium text-primary">
+
+      Interview Prep
+
+      <br />
+
+      <span className="mt-0.5 text-xs text-muted-foreground">
+
+        Answer the interview question
+        naturally. Alymera will evaluate
+        your answer and continue.
+
+        <br />
+
+        Type <strong>end interview</strong>
+        whenever you want to stop.
+
+      </span>
+
+    </p>
+
+    <div className="flex-1" />
+
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="ml-2 h-7 w-7 shrink-0"
+      onClick={() => {
+        setActiveFeature(null)
+      }}
+      aria-label="Close interview instructions"
+    >
+      <X className="h-4 w-4" />
+    </Button>
+
+  </div>
+)}
+
+          {/* ==================================================
+              CHAT INPUT
+              
+              Hidden during interview setup.
+              The job-description setup has its own input.
+          ================================================== */}
 
           {!(
             activeFeature ===
               "interview" &&
-            messages.length === 0
+            interviewMode !== null
           ) && (
             <PromptInput
               onSubmit={(
@@ -1707,21 +1786,26 @@ Ask me ONE interview question at a time.`,
                   )
                 }
                 onKeyDown={(e) => {
+
                   if (
                     e.key ===
                       "Enter" &&
                     !e.shiftKey
                   ) {
+
                     e.preventDefault()
 
                     handleSubmit()
+
                   }
+
                 }}
               />
 
               <div className="flex flex-col justify-end p-2">
-                
+
                 {isLoading ? (
+
                   <PromptInputSubmit
                     type="button"
                     onClick={
@@ -1732,7 +1816,9 @@ Ask me ONE interview question at a time.`,
                   >
                     ■
                   </PromptInputSubmit>
+
                 ) : (
+
                   <PromptInputSubmit
                     aria-label="Send message"
                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
@@ -1740,6 +1826,7 @@ Ask me ONE interview question at a time.`,
                       !prompt.trim()
                     }
                   />
+
                 )}
 
               </div>
