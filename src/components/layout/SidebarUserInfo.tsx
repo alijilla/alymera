@@ -69,11 +69,11 @@ useEffect(() => {
   return (
     <div className="box-border mt-auto flex flex-wrap gap-3 p-3 items-center hover:bg-muted/50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-border/50">
       <Avatar className="size-[36px] flex-shrink-0 shadow-sm border border-border/50">
-       <AvatarImage
-         alt={fullname || "Profile"}
+<AvatarImage
+  alt={fullname || "Profile"}
   src={avatarUrl}
-  width={1080}
-  height={1080}
+  width={36}
+  height={36}
   className="w-full h-full object-cover"
 />
         <AvatarFallback className="font-bold text-primary bg-primary/10">
