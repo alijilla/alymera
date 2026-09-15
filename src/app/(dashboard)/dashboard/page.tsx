@@ -128,66 +128,33 @@ export default function DashboardPage() {
 
       if (authError) {
         console.error("Auth error:", authError)
-
-        if (!cancelled) {
-          setLoading(false)
-        }
-
+        if (!cancelled) setLoading(false)
         return
       }
 
       if (!user) {
-        if (!cancelled) {
-          setLoading(false)
-        }
-
+        if (!cancelled) setLoading(false)
         return
       }
 
-      // ----------------------------------------------
-      // Profile
-      // ----------------------------------------------
+      // Parallelize independent fetches
+      const [profileRes, projectsRes, applicationsRes] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("applications").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      ])
 
-      const { data: profileData, error: profileError } =
-        await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .maybeSingle()
+      if (profileRes.error) console.error("Profile fetch error:", profileRes.error)
+      if (projectsRes.error) console.error("Projects fetch error:", projectsRes.error)
+      if (applicationsRes.error) console.error("Applications fetch error:", applicationsRes.error)
 
-      if (profileError) {
-        console.error("Profile fetch error:", profileError)
-      }
+      const userProjects = projectsRes.data ?? []
 
-      // ----------------------------------------------
-      // Projects
-      // ----------------------------------------------
-
-      const {
-        data: projectsData,
-        error: projectsError,
-      } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-
-      if (projectsError) {
-        console.error("Projects fetch error:", projectsError)
-      }
-
-      const userProjects = projectsData ?? []
-
-      // ----------------------------------------------
-      // Tasks
-      // ----------------------------------------------
-
+      // Tasks (depends on projects)
       let userTasks: DBTask[] = []
 
       if (userProjects.length > 0) {
-        const projectIds = userProjects.map(
-          (project) => project.id
-        )
+        const projectIds = userProjects.map((project) => project.id)
 
         const {
           data: tasksData,
@@ -205,32 +172,12 @@ export default function DashboardPage() {
         userTasks = tasksData ?? []
       }
 
-      // ----------------------------------------------
-      // Applications
-      // ----------------------------------------------
-
-      const {
-        data: applicationsData,
-        error: applicationsError,
-      } = await supabase
-        .from("applications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-
-      if (applicationsError) {
-        console.error(
-          "Applications fetch error:",
-          applicationsError
-        )
-      }
-
       if (cancelled) return
 
-      setFullname(profileData?.full_name ?? "")
+      setFullname(profileRes.data?.full_name ?? "")
       setProjects(userProjects)
       setTasks(userTasks)
-      setApplications(applicationsData ?? [])
+      setApplications(applicationsRes.data ?? [])
       setLoading(false)
     }
 
@@ -320,37 +267,6 @@ export default function DashboardPage() {
     )
 
     setUpdatingTaskId(null)
-  }
-
-  // ====================================================
-  // Loading
-  // ====================================================
-
-  if (loading) {
-    return (
-      <main className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="h-40 animate-pulse rounded-2xl bg-muted/50" />
-
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-28 animate-pulse rounded-2xl bg-muted/50"
-            />
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
-          <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
-          <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
-          <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
-          <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
-        </div>
-      </main>
-    )
   }
 
   // ====================================================
@@ -599,9 +515,13 @@ export default function DashboardPage() {
           <div className="min-w-0">
             <CardTitle className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
               {greeting},{" "}
-              <span className="text-primary">
-                {getFirstName(fullname)}
-              </span>
+              {loading && !fullname ? (
+                <span className="inline-block w-32 h-8 animate-pulse rounded-md bg-muted/60 align-middle"></span>
+              ) : (
+                <span className="text-primary">
+                  {getFirstName(fullname)}
+                </span>
+              )}
               .
             </CardTitle>
 
@@ -622,6 +542,29 @@ export default function DashboardPage() {
         </div>
       </Card>
 
+      {loading ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-28 animate-pulse rounded-2xl bg-muted/50"
+              />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
+            <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+            <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6">
+            <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
+            <div className="h-80 animate-pulse rounded-2xl bg-muted/50" />
+          </div>
+        </div>
+      ) : (
+        <>
       {/* ==================================================
           BUILD STATS
       ================================================== */}
@@ -990,7 +933,8 @@ export default function DashboardPage() {
           </Button>
         </div>
       </Card>
-
+      </>
+      )}
     </main>
   )
 }
