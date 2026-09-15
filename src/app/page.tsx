@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { ArrowRight, Sparkles } from "lucide-react"
@@ -17,17 +16,6 @@ const Scene = dynamic(
 
 export default function LandingPage() {
   const router = useRouter()
-  const [showScene, setShowScene] = useState(false)
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setShowScene(true)
-      })
-    })
-
-    return () => cancelAnimationFrame(id)
-  }, [])
 
   const getStarted = () => {
     router.push("/login")
@@ -44,7 +32,7 @@ export default function LandingPage() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 h-screen w-full"
       >
-        {showScene && <Scene />}
+        <Scene />
       </div>
 
       {/* Very subtle readability layer */}
@@ -108,7 +96,7 @@ export default function LandingPage() {
           </h2>
 
           {/* Description */}
-          <p className="mt-5 max-w-xl text-base leading-7 text-foreground/70 sm:mt-6 sm:text-lg sm:leading-8 md:text-xl">
+          <p className="mt-5 max-w-xl text-base leading-7  text-foreground/70 sm:mt-6 sm:text-lg sm:leading-8 md:text-xl">
             One AI-powered workspace to build projects, manage job
             applications, and grow your career — all in one place.
           </p>
