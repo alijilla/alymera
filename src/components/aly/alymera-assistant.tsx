@@ -273,8 +273,6 @@ const handleSubmit = (text?: string) => {
 
                 {/* AI model */}
                 <div className="mt-4 flex items-center gap-2 rounded-full border border-border/50 bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  <span>GPT-OSS 120B · Groq</span>
                 </div>
 
                 {/* Suggested prompts */}

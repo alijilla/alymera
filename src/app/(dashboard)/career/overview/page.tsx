@@ -195,7 +195,7 @@ useEffect(() => {
 
   return (
     <main className="min-h-screen w-full bg-background">
-      <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 sm:space-y-6 sm:px-5 sm:py-7 lg:px-8 lg:py-10">
+      <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
 
         {/* HERO */}
         <Card className="overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-sm">

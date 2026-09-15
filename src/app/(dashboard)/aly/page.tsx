@@ -39,9 +39,7 @@ export default async function AlymeraAIPage({
                 AI Assistant
               </span>
 
-              <span>
-                GPT-OSS 120B · Groq
-              </span>
+         
             </div>
           </div>
         </div>

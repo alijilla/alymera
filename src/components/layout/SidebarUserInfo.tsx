@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { Profile } from "@/types/profile";
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 function getInitials(name: string) {
   if (!name.trim()) return "A";
 
@@ -69,17 +70,20 @@ useEffect(() => {
 }, []);
   return (
     <div className="box-border mt-auto flex flex-wrap gap-3 p-3 items-center hover:bg-muted/50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-border/50">
-      <Avatar className="size-[36px] flex-shrink-0 shadow-sm border border-border/50">
-<AvatarImage
-  alt={fullname || "Profile"}
-  src={avatarUrl}
-  width={36}
-  height={36}
-  className="w-full h-full object-cover"
-/>
-        <AvatarFallback className="font-bold text-primary bg-primary/10">
-          {getInitials(fullname)}
-        </AvatarFallback>
+      <Avatar className="size-[36px] flex-shrink-0 shadow-sm border border-border/50 overflow-hidden relative">
+        {avatarUrl ? (
+          <Image
+            alt={fullname || "Profile"}
+            src={avatarUrl}
+            width={36}
+            height={36}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <AvatarFallback className="font-bold text-primary bg-primary/10">
+            {getInitials(fullname)}
+          </AvatarFallback>
+        )}
       </Avatar>
       <div className="flex-1 min-w-0">
         <div aria-label="name" className="truncate text-sm font-semibold text-foreground leading-tight">

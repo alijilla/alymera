@@ -109,12 +109,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
-    let channel: any = null
-    let supabaseClient: any = null
 
     async function init() {
       const { supabase } = await import("@/lib/supabase/client")
-      supabaseClient = supabase
 
       async function loadDashboard() {
         const {
@@ -178,56 +175,12 @@ export default function DashboardPage() {
       }
 
       await loadDashboard()
-
-      // ==================================================
-      // Realtime dashboard updates
-      // ==================================================
-
-      channel = supabase
-        .channel("dashboard-changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "tasks",
-          },
-          () => {
-            void loadDashboard()
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "projects",
-          },
-          () => {
-            void loadDashboard()
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "applications",
-          },
-          () => {
-            void loadDashboard()
-          }
-        )
-        .subscribe()
     }
 
     init()
 
     return () => {
       cancelled = true
-      if (channel && supabaseClient) {
-        supabaseClient.removeChannel(channel)
-      }
     }
   }, [])
 

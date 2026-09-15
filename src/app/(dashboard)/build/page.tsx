@@ -2,13 +2,13 @@
 
 import {useState, useEffect} from "react"
 import { z } from "zod"
-import { supabase } from "@/lib/supabase/client";
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { newProjectSchema } from "@/lib/schemas/newproject"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { format, parseISO } from "date-fns"
 import Link from "next/link"
+import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
 import {
   Card,
@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { CalendarIcon, PlusCircleIcon, MoreVertical, TrashIcon, PencilIcon } from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
+import dynamic from 'next/dynamic'
+const Calendar = dynamic(() => import('@/components/ui/calendar').then(mod => mod.Calendar), { ssr: false })
 import { Button } from "@/components/ui/button"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -146,6 +147,7 @@ const [deletingProject, setDeletingProject] = useState<Project | null>(null)
 
 
   async function getProjects(){
+    const { supabase } = await import("@/lib/supabase/client");
     console.log("Fetching projects...");
     try{
       const {data, error} = await supabase 
@@ -166,33 +168,24 @@ const [deletingProject, setDeletingProject] = useState<Project | null>(null)
     }
   }
   useEffect(() => {
-    getProjects()
-    
-    async function getTasks() {
-      const { data } = await supabase.from("tasks").select("*")
-      if (data) setTasks(data)
+    async function init() {
+      const { supabase } = await import("@/lib/supabase/client");
+      getProjects()
+      
+      async function getTasks() {
+        const { data } = await supabase.from("tasks").select("*")
+        if (data) setTasks(data)
+      }
+      getTasks()
     }
-    getTasks()
-
-    const channel = supabase
-      .channel('build-page-tasks')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        getTasks()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        getProjects()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    init();
   }, [])
   
   
   
   
     async function onSubmit(values: z.infer<typeof newProjectSchema>): Promise<void> {
+      const { supabase } = await import("@/lib/supabase/client");
 
           
       try{
@@ -302,6 +295,7 @@ function handleDelete(project: Project) {
 }
   
    async function handleEdit(values: z.infer<typeof newProjectSchema>): Promise<void> {
+      const { supabase } = await import("@/lib/supabase/client");
   try{
           
         const {
@@ -763,12 +757,18 @@ return (
           </CardHeader>
           <CardContent className="space-y-5 flex-1 px-4 md:px-6 pb-6">
             <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/30">
-            <Avatar className="size-[48px] flex-shrink-0 shadow-sm border border-border/50">
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials (proj.name)}</AvatarFallback>
-                <AvatarImage 
-                  alt={`${proj.name} project icon`}
-                 src={proj.image_src}
-                className="w-full h-full object-cover"  />
+            <Avatar className="size-[48px] flex-shrink-0 shadow-sm border border-border/50 overflow-hidden relative">
+                  {proj.image_src ? (
+                    <Image 
+                      alt={`${proj.name} project icon`}
+                      src={proj.image_src}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover absolute inset-0" 
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials(proj.name)}</AvatarFallback>
+                  )}
               </Avatar>
               <div>
                 <h2 className="font-semibold text-lg line-clamp-1">{proj.name}</h2>
@@ -1010,6 +1010,7 @@ return (
               variant="destructive"
               onClick={async () => {
                 if (!deletingProject) return
+                const { supabase } = await import("@/lib/supabase/client")
                 const { error } = await supabase
                   .from("projects")
                   .delete()
