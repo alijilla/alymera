@@ -634,7 +634,7 @@ export default function DashboardPage() {
               className="rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2 sm:p-5">
-                <CardTitle className="max-w-[90px] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:max-w-none sm:text-xs">
+                <CardTitle className="max-w-[90px] text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:max-w-none sm:text-xs">
                   {stat.label}
                 </CardTitle>
 
@@ -703,6 +703,7 @@ export default function DashboardPage() {
                   </div>
 
                   <Progress
+                   aria-label={`${firstActiveProject?.name ?? "Project"} progress`}
                     value={projectPercentage}
                     className="h-2 rounded-full"
                   />
@@ -849,7 +850,7 @@ export default function DashboardPage() {
                       {activity.description}
                     </p>
 
-                    <p className="mt-1 text-[10px] text-muted-foreground/60">
+                    <p className="mt-1 text-[11px] text-muted-foreground/60">
                       {formatDateTime(activity.date)}
                     </p>
                   </div>
@@ -886,7 +887,7 @@ export default function DashboardPage() {
                   <div className="flex min-w-0 items-center gap-2">
                     {stat.icon}
 
-                    <span className="truncate text-[10px] font-semibold uppercase text-muted-foreground sm:text-xs">
+                    <span className="truncate text-[11px] font-semibold uppercase text-muted-foreground sm:text-xs">
                       {stat.label}
                     </span>
                   </div>
@@ -959,7 +960,7 @@ export default function DashboardPage() {
               <div className="h-16 w-16 shrink-0">
                 <Image
                   src="/img/mascot.png"
-                  alt="Alymera AI mascot"
+                   alt="Alymera AI mascot"
                   width={64}
                   height={64}
                   className="h-full w-full object-contain"
