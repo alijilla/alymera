@@ -560,6 +560,7 @@ export function Kanban({ projectId }: KanbanProps) {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Task options"
               className="
                 -mr-2
                 h-7
