@@ -421,6 +421,7 @@ return (
                               <FormControl>
                                 <Input placeholder="i.eg AI Project Manager"  {...field}  />
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem>
 
@@ -435,6 +436,7 @@ return (
                               <FormControl>
                                 <Input placeholder="i.eg Build an ai powered project manager" {...field} />
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem>
  
@@ -453,6 +455,7 @@ return (
                             />
 
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem>
  
@@ -473,6 +476,7 @@ return (
                                   onChange(e.target.files && e.target.files[0])
                                 }/>
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem>
 
@@ -510,6 +514,7 @@ return (
                               </SelectContent>
                             </Select>                  
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem>
   )}
@@ -534,6 +539,7 @@ return (
                             </PopoverContent>
                           </Popover>
                               </FormControl>
+                              <FormDescription className="hidden" />
                               <FormMessage />
                             </FormItem> )}               
                             />
@@ -564,6 +570,7 @@ return (
                                       type="button" 
                                       variant="ghost" 
                                       size="sm" 
+                                      aria-label="Remove milestone"
                                       className="text-destructive hover:bg-destructive/10" 
                                       onClick={() => removeMilestone(index)}
                                     >
@@ -580,6 +587,7 @@ return (
                                         <FormControl>
                                           <Input placeholder="Milestone name" {...field} />
                                         </FormControl>
+                                        <FormDescription className="hidden" />
                                         <FormMessage />
                                       </FormItem>
                                     )}
@@ -594,6 +602,7 @@ return (
                                         <FormControl>
                                           <Input placeholder="Milestone description" {...field} />
                                         </FormControl>
+                                        <FormDescription className="hidden" />
                                         <FormMessage />
                                       </FormItem>
                                     )}
@@ -831,6 +840,7 @@ return (
                     <FormControl>
                       <Input placeholder="i.eg AI Project Manager" {...field} />
                     </FormControl>
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -848,6 +858,7 @@ return (
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -865,6 +876,7 @@ return (
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -886,6 +898,7 @@ return (
                         }
                       />
                     </FormControl>
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -916,6 +929,7 @@ return (
                           </SelectContent>
                         </Select>
                       </FormControl>
+                      <FormDescription className="hidden" />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -956,6 +970,7 @@ return (
                             </PopoverContent>
                           </Popover>
                         </FormControl>
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )}

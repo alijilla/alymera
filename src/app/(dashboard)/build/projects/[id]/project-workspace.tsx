@@ -195,7 +195,7 @@ const [isLoading, setIsLoading] = useState(true)
               )}
             </CardHeader>
 
-            {/* GitHub Button */}
+           
             <CardContent className="w-full shrink-0 p-0 md:w-auto">
              
             </CardContent>
@@ -280,47 +280,6 @@ const [isLoading, setIsLoading] = useState(true)
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* GitHub Dialog */}
-        <Dialog
-          open={githubDialogOpen}
-          onOpenChange={setGithubDialogOpen}
-        >
-          <DialogContent className="w-[calc(100%-2rem)] rounded-2xl sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Connect GitHub Repository</DialogTitle>
-
-              <DialogDescription>
-                Enter your GitHub repository URL or owner/repo.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-3 sm:py-4">
-              <Input
-                placeholder="e.g. facebook/react"
-                value={repoInput}
-                onChange={(event) =>
-                  setRepoInput(event.target.value)
-                }
-                className="h-11 rounded-xl"
-              />
-            </div>
-
-            <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button
-                variant="outline"
-                onClick={() => setGithubDialogOpen(false)}
-                className="w-full rounded-xl sm:w-auto"
-              >
-                Cancel
-              </Button>
-
-              <Button className="w-full rounded-xl sm:w-auto">
-                Connect
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </main>
   )

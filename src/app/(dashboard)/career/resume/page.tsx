@@ -2198,10 +2198,10 @@ function FormField({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <label className="block space-y-2">
+      <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{label}</span>
       {children}
-    </div>
+    </label>
   )
 }
 
