@@ -129,6 +129,7 @@ useEffect(() => {
       {/* Back to landing */}
       <Link
         href="/"
+        aria-label="Back"
         className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-xl border border-border/50 bg-background/60 px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background/80 hover:text-foreground sm:left-6 sm:top-6"
       >
         <ArrowLeft className="h-4 w-4" />

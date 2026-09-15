@@ -525,6 +525,7 @@ const handleSubmit = (text?: string) => {
   className="shrink-0 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10"
 >
             <PromptInputTextarea
+             aria-label="prompt input area"
               placeholder={
                 demo
                   ? "Try asking Alymera..."

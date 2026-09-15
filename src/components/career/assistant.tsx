@@ -1483,6 +1483,7 @@ Ask me ONE interview question at a time.`,
                       >
 
                         <PromptInputTextarea
+                          aria-label="prompt input area"
                           placeholder="Paste the job description here..."
                           value={prompt}
                           className="min-h-[150px] max-h-[300px] resize-none rounded-2xl border-0 py-3 focus-visible:ring-0"
@@ -1681,6 +1682,7 @@ Ask me ONE interview question at a time.`,
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Close job matching"
                 onClick={() => {
                   setActiveFeature(null)
                   setPrompt("")
@@ -1764,6 +1766,7 @@ Ask me ONE interview question at a time.`,
             >
 
               <PromptInputTextarea
+                aria-label="prompt input area"
                 placeholder={
                   getInputPlaceholder()
                 }
