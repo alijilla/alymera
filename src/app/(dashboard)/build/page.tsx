@@ -720,7 +720,7 @@ return (
              <div className="flex items-start justify-end px-4 pt-4">
                                     <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
+                                        <Button variant="ghost"  aria-label={`Actions for ${proj.name}`} size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
                                         <MoreVertical className="w-4 h-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -757,6 +757,7 @@ return (
             <Avatar className="size-[48px] flex-shrink-0 shadow-sm border border-border/50">
                 <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials (proj.name)}</AvatarFallback>
                 <AvatarImage 
+                  alt={`${proj.name} project icon`}
                  src={proj.image_src}
                 className="w-full h-full object-cover"  />
               </Avatar>
@@ -781,7 +782,7 @@ return (
                   <span className="text-muted-foreground font-medium">Progress</span>
                   <span className="font-bold text-primary">{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-2 rounded-full" />
+                <Progress value={progress}   aria-label={`${proj.name} project progress`}  className="h-2 rounded-full" />
                 <p className="text-xs font-medium text-muted-foreground text-right">{completedTasks}/{totalTasks} tasks completed</p>
               </div>
             </div>

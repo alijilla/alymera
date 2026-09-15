@@ -606,6 +606,7 @@ export function Overview({ projectId }: OverviewProps) {
 
                 <Progress
                   value={progress}
+                  aria-label="Project progress"
                   className="h-2.5 rounded-full"
                 />
 
