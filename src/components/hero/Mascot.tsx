@@ -65,33 +65,33 @@ useFrame((state) => {
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}>
     <mesh>
-      <sphereGeometry args={[0.6, 64, 64]} />
+      <sphereGeometry args={[0.6, 32, 32]} />
       <meshStandardMaterial ref={materialRef} color="purple" />
     </mesh>
         <mesh position={ [0.3, 0, 0.4]}>
-      <sphereGeometry args={[0.3, 64, 64]} />
+      <sphereGeometry args={[0.3, 32, 32]} />
       <meshStandardMaterial color="white" />
     </mesh>
     <mesh position={ [-0.3, 0, 0.4]}>
-      <sphereGeometry args={[0.3, 64, 64]} />
+      <sphereGeometry args={[0.3, 32, 32]} />
       <meshStandardMaterial color="white" />
     </mesh>
     
     <mesh position={ [0.3, 0, 0.53]}>
-      <sphereGeometry args={[0.2, 64, 64]} />
+      <sphereGeometry args={[0.2, 32, 32]} />
       <meshStandardMaterial color="black" />
     </mesh>
     <mesh position={ [-0.3, 0, 0.53]}>
-      <sphereGeometry args={[0.2, 64, 64]} />
+      <sphereGeometry args={[0.2, 32, 32]} />
       <meshStandardMaterial color="black" />
     </mesh>
 
     <mesh position={ [0.4, 0, 0.6]}>
-      <sphereGeometry args={[0.1, 64, 64]} />
+      <sphereGeometry args={[0.1, 32, 32]} />
       <meshStandardMaterial color="white" />
     </mesh>
     <mesh position={ [-0.4, 0, 0.6]}>
-      <sphereGeometry args={[0.1, 64, 64]} />
+      <sphereGeometry args={[0.1, 32, 32]} />
       <meshStandardMaterial color="white" />
     </mesh>
     </group>
