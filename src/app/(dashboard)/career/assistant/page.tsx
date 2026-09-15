@@ -1,7 +1,5 @@
 
 import { CareerAssistant } from "@/components/career/assistant";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
 
 export default async function CareerAssistantPage({
   searchParams,

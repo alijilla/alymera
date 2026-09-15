@@ -567,7 +567,7 @@ const handleSubmit = (text?: string) => {
             </div>
           </PromptInput>
 
-          <p className="mt-2 px-2 text-center text-[10px] leading-4 text-muted-foreground">
+          <p className="mt-2 px-2 text-center text-xs leading-4 text-muted-foreground">
             Alymera AI can make mistakes. Verify important
             information before relying on it.
           </p>
