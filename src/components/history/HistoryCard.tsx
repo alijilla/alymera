@@ -96,6 +96,7 @@ export function HistoryCard({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Conversation options"
             className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
