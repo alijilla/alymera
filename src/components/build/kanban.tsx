@@ -941,7 +941,7 @@ async function handleDragEnd(event: {
                             {...field}
                           />
                         </FormControl>
-
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -962,7 +962,7 @@ async function handleDragEnd(event: {
                             {...field}
                           />
                         </FormControl>
-
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1013,7 +1013,7 @@ async function handleDragEnd(event: {
                             </SelectContent>
                           </Select>
                         </FormControl>
-
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1074,7 +1074,7 @@ async function handleDragEnd(event: {
                                 </PopoverContent>
                               </Popover>
                             </FormControl>
-
+                            <FormDescription className="hidden" />
                             <FormMessage />
                           </FormItem>
                         )
@@ -1122,7 +1122,7 @@ async function handleDragEnd(event: {
                             </SelectContent>
                           </Select>
                         </FormControl>
-
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1195,7 +1195,7 @@ async function handleDragEnd(event: {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1216,7 +1216,7 @@ async function handleDragEnd(event: {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1267,7 +1267,7 @@ async function handleDragEnd(event: {
                         </SelectContent>
                       </Select>
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1328,7 +1328,7 @@ async function handleDragEnd(event: {
                             </PopoverContent>
                           </Popover>
                         </FormControl>
-
+                        <FormDescription className="hidden" />
                         <FormMessage />
                       </FormItem>
                     )
@@ -1376,7 +1376,7 @@ async function handleDragEnd(event: {
                         </SelectContent>
                       </Select>
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}

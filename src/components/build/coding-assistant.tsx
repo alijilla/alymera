@@ -465,6 +465,7 @@ const handleSubmit = (text?: string) => {
 >
 
             <PromptInputTextarea
+              aria-label="prompt input area"
               placeholder="Ask Coding Assistant..."
               value={prompt}
               className="min-h-[50px] max-h-[250px] py-3.5 border-0 focus-visible:ring-0 resize-none rounded-2xl"
@@ -482,6 +483,7 @@ const handleSubmit = (text?: string) => {
               {isLoading ? (
                 <PromptInputSubmit
                   type="button"
+                  aria-label="Stop generating"
                   onClick={stop}
                   className="rounded-xl bg-destructive text-destructive-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
                 >
@@ -489,6 +491,7 @@ const handleSubmit = (text?: string) => {
                 </PromptInputSubmit>
               ) : (
                 <PromptInputSubmit
+                  aria-label="Send message"
                   className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all h-9 w-9 flex items-center justify-center"
                   disabled={!prompt.trim()}
                 />
