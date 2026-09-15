@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { Canvas } from "@react-three/fiber"
-import { Environment, Float } from "@react-three/drei"
+import { Float } from "@react-three/drei"
 
 import Mascot from "@/components/hero/Mascot"
 import Workspace from "@/components/hero/Workspace"
