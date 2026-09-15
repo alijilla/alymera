@@ -43,6 +43,14 @@ export const maxDuration = 30
 //})
 
 export async function POST(req: Request) {
+
+  const contentLength = req.headers.get("content-length")
+
+if (contentLength && Number(contentLength) > 100_000) {
+  return new Response("Request too large.", {
+    status: 413,
+  })
+}
   // ============================================================
   // TOOLS
   // ============================================================
