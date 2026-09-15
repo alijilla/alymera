@@ -21,6 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormControl,
+  FormDescription,
   FormMessage,
 } from "@/components/ui/form"
 
@@ -197,7 +198,7 @@ useEffect(() => {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -222,7 +223,7 @@ useEffect(() => {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}

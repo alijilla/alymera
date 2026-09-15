@@ -26,6 +26,7 @@ import {
   FormItem,
   FormLabel,
   FormControl,
+  FormDescription,
   FormMessage,
 } from "@/components/ui/form"
 
@@ -263,7 +264,7 @@ export default function SignupPage() {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -288,7 +289,7 @@ export default function SignupPage() {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -313,7 +314,7 @@ export default function SignupPage() {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -338,7 +339,7 @@ export default function SignupPage() {
                         {...field}
                       />
                     </FormControl>
-
+                    <FormDescription className="hidden" />
                     <FormMessage />
                   </FormItem>
                 )}
