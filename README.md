@@ -1,114 +1,439 @@
-**Flyrank AI Frontend AI Engineer Capstone · 🚧 In Development**
+# Alymera — Build. Apply. Become.
 
-ALYMERA is an AI-powered workspace designed for developers and graduating students who manage both **software projects and job applications**.
+**FlyRank AI Frontend AI Engineer Capstone**
 
-Instead of using separate tools for managing coding projects and tracking a job applications, ALYMERA brings both workflows together.
+Alymera is an AI-powered workspace for developers and graduating students who manage both **software projects** and **job applications**.
 
-### 💻 Build Mode
+Instead of switching between separate tools for project planning, task management, resume preparation, and job tracking, Alymera brings these workflows together in one workspace.
 
-AI-assisted project management:
+## Live Demo
 
-- Turn an application idea into development tasks
-- Manage tasks through a Kanban board
-- Drag and drop tasks
-- Estimate development work
-- Get AI coding/project assistance
-- Interact with a streaming AI assistant
+**Production:** `<your deployed Vercel URL>`
 
-### 🎯 Career Mode
+> The production deployment is currently being finalized and tested as part of the capstone submission.
 
-AI-assisted job description insight:
+---
 
-- Track job applications
-- Organize applications 
-- Compare jobs against a resume
-- Generate resume–job alignment scores
-- Identify missing or relevant skills
-- Tailor resume content
-- Generate customized cover letters (I'm still thinking about this)
+## What Alymera Does
 
-### 🛠️ Technologies
+Alymera has two main areas:
 
-`Next.js` `React` `TypeScript` `Tailwind CSS` `shadcn/ui`
+### Build Mode
 
-`Supabase` `PostgreSQL` `Vercel AI SDK` `Groq`
+Build Mode helps users organize and work on software projects.
 
-`dnd-kit` `Git` `GitHub` `Vercel`
+* Create and manage projects
+* Break project ideas into actionable tasks
+* Organize tasks with a Kanban workflow
+* Drag and drop tasks between statuses
+* Track milestones and project progress
+* Estimate task effort
+* Use AI for project and coding assistance
+* Stream AI responses instead of waiting for one large response
+* Work with project-specific context so the AI can focus on the active project
 
-**Status:** 🚧 Actively building
+### Career Mode
 
+Career Mode helps developers manage their job search.
 
-## 🤝 Contact
-Alyssa Jade P. Merjilla  
-- LinkedIn: [linkedin.com/in/alyssa-jade-merjilla](https://linkedin.com/in/alyssa-jade-merjilla)
-- GitHub: [@alijilla](https://github.com/alijilla)
+* Create and manage job applications
+* Track application status
+* Store resume information
+* Compare a resume against a job description
+* Generate a structured match score
+* Identify matched and missing skills
+* Highlight strengths and improvement areas
+* Get AI-assisted resume guidance
+* Organize applications in one workspace
 
+---
 
-## FE-AA2 — Interactive 3D Experience
+## Key Features
 
-### What I Built
+### AI Project Assistant
 
-ALYMERA's landing page features an interactive 3D workspace built with React Three Fiber.
+The AI assistant can work with project and career context and use application tools to perform supported actions.
 
-The scene includes:
-- A custom ALYMERA mascot
-- A floating workspace interface
-- Project, progress, and career preview information
-- Pointer-based mascot rotation
-- Hover interaction with smooth visual changes
+The assistant can:
 
-The 3D experience is integrated directly into the ALYMERA landing page rather than being a separate demo.
+* Read project information
+* Read current project tasks and milestones
+* Check project progress
+* Create projects
+* Create tasks
+* Create milestones
+* Work with job applications
+* Read resume information
+* Assist with career analysis
 
-### Interaction
+Mutation actions use approval steps before changes are made.
 
-The ALYMERA mascot responds to pointer movement by smoothly rotating toward the cursor.
+### Streaming AI Responses
 
-Hovering over the mascot triggers a smooth color and scale transition.
+Alymera uses the Vercel AI SDK to stream assistant responses progressively.
 
-### Performance
+This allows users to see the AI response as it is generated instead of waiting for the entire response to finish.
 
-The 3D hero is lazy-loaded using Next.js `next/dynamic` with server-side rendering disabled.
+### Current Project Context
 
-The React Three Fiber canvas uses a capped device pixel ratio to help reduce rendering cost.
+When a user is inside a specific project workspace, the AI is instructed to treat that project as the active project.
 
-The current scene uses lightweight Three.js geometry rather than a large external 3D model.
+Project-specific tools are used to avoid accidentally reading or modifying unrelated projects.
 
-Lighthouse testing produced the following results:
+The application also verifies relevant database state before making claims about project data.
 
-| Audit | Mobile | Desktop |
-|---|---:|---:|
-| Performance | **75** | **98** |
+### Career Assistant
 
-The current mobile performance score reflects the cost of rendering the interactive 3D experience under a constrained mobile profile. Further optimization will be addressed during the final FE-10 accessibility and performance audit.
+The Career Assistant provides structured resume/job-description analysis including:
 
-### Accessibility / Reduced Motion
+* Match score
+* Matching skills
+* Missing skills
+* Strengths
+* Suggestions for improvement
 
-The 3D experience detects the user's `prefers-reduced-motion` preference.
+---
 
-When reduced motion is enabled:
-- 3D movement is reduced/stopped
-- The scene remains visible
-- Non-motion visual feedback can still be provided
+## Tech Stack
 
-### Mobile
+### Frontend
 
-The landing page is designed to remain usable across mobile and desktop screen sizes.
+* Next.js 16
+* React 19
+* TypeScript
+* Tailwind CSS
+* shadcn/ui
+* Motion
+* React Hook Form
+* Zod
 
-The 3D canvas is lazy-loaded to avoid loading the WebGL experience before it is needed.
+### AI
 
-### What I'd Add With More Time
+* Vercel AI SDK
+* Groq
+* `openai/gpt-oss-120b`
+* Streaming responses
+* Tool calling
+* Structured AI workflows
+* Human-in-the-loop approval for mutations
 
-I would add more detailed 3D assets, additional interactions, and further mobile performance optimization based on real-device testing.
+### Backend & Data
 
-### FE-AA2 Requirement Status
+* Supabase
+* PostgreSQL
+* Supabase Auth
+* Next.js Route Handlers
 
-- [x] Real 3D scene rendered in the browser
-- [x] React Three Fiber
-- [x] Meaningful interaction beyond orbiting
-- [x] Lazy-loaded 3D canvas
-- [x] Lightweight 3D geometry
-- [x] Mobile-friendly layout
-- [x] Performance checked with Lighthouse
-- [x] Reduced-motion handling
-- [ ] Further mobile performance optimization
-Further mobile performance optimization will be addressed during the final FE-10 audit.
+### Other Technologies
+
+* dnd-kit
+* React Three Fiber
+* Three.js
+* Streamdown
+* Jest
+* React Testing Library
+* Vercel
+
+---
+
+## Architecture
+
+Alymera uses a Next.js App Router architecture.
+
+```text
+User
+ │
+ ▼
+Next.js / React UI
+ │
+ ├── Build Mode
+ │    ├── Projects
+ │    ├── Tasks
+ │    ├── Milestones
+ │    └── AI Project Assistant
+ │
+ ├── Career Mode
+ │    ├── Applications
+ │    ├── Resume
+ │    └── Career Assistant
+ │
+ ▼
+Next.js API Routes
+ │
+ ├── Authentication
+ ├── AI orchestration
+ ├── Tool execution
+ └── Streaming responses
+ │
+ ├───────────────┐
+ ▼               ▼
+Groq          Supabase
+AI Model      PostgreSQL
+              Auth / Data
+```
+
+The AI route is responsible for coordinating model responses, project/career context, tools, approvals, and streamed output.
+
+---
+
+## AI Route Protection
+
+The production AI endpoint includes basic protections against trivial abuse.
+
+### Request size cap
+
+Requests larger than **100 KB** are rejected.
+
+This helps prevent unnecessarily large requests from being sent to the AI provider.
+
+### Streaming duration
+
+The AI route uses:
+
+```ts
+export const maxDuration = 30
+```
+
+This places a sensible maximum duration on streaming AI requests.
+
+### Retry behavior
+
+AI requests use:
+
+```ts
+maxRetries: 0
+```
+
+This prevents automatic retries from unnecessarily increasing provider usage.
+
+### Authentication and data scoping
+
+Authenticated AI functionality is associated with the current user, and project/application operations are scoped to the appropriate user and active project context.
+
+Secrets such as AI provider keys are stored as environment variables and are not exposed to the client.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+* Node.js
+* npm
+* Supabase project
+* Groq API key
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd alymera
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the project root.
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+GROQ_API_KEY=your_groq_api_key
+```
+
+Do not commit `.env.local` or API keys to the repository.
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+Then open the local Next.js development server shown in your terminal.
+
+### 5. Create a production build
+
+```bash
+npm run build
+```
+
+### 6. Start the production server locally
+
+```bash
+npm run start
+```
+
+---
+
+## Environment Variables
+
+| Variable                               | Required | Purpose                               |
+| -------------------------------------- | -------- | ------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Yes      | Supabase project URL                  |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes      | Supabase client/server authentication |
+| `GROQ_API_KEY`                         | Yes      | Access to the Groq AI provider        |
+
+Keep secret credentials in environment variables rather than hard-coding them into source code.
+
+---
+
+## Testing
+
+Alymera includes automated tests using Jest and React Testing Library.
+
+Current tests cover areas including:
+
+* Component rendering
+* Empty application states
+* Project workspace context
+* AI assistant demo behavior
+* Supabase-related UI behavior
+
+Run the available checks with:
+
+```bash
+npm test
+```
+
+For a production build:
+
+```bash
+npm run build
+```
+
+---
+
+## 3D Experience
+
+The landing page includes an interactive 3D experience built with React Three Fiber and Three.js.
+
+The experience includes:
+
+* Custom Alymera mascot
+* Floating workspace interface
+* Pointer-based interaction
+* Hover interactions
+* Lazy loading
+* Reduced-motion consideration
+* Lightweight 3D geometry
+* Capped device pixel ratio
+
+The 3D experience is treated as an enhancement to the landing page rather than a requirement for using the core application.
+
+---
+
+## Design Decisions
+
+### Why Supabase?
+
+Supabase provides PostgreSQL, authentication, and database access in one service, which simplified the application's full-stack architecture.
+
+### Why Groq?
+
+Groq was selected as the current AI provider because of its fast inference experience and compatibility with the AI SDK architecture.
+
+The AI provider integration is kept replaceable so another supported provider can be introduced later if needed.
+
+### Why streaming?
+
+Streaming makes AI interactions feel more responsive because users can see the answer being generated progressively.
+
+### Why tool calling?
+
+Tool calling allows the AI assistant to interact with application data and perform supported operations instead of only returning plain text.
+
+### Why human approval?
+
+Actions that modify project or career data require approval before execution. This reduces the risk of an AI assistant making unintended changes.
+
+---
+
+## How AI Tools Were Used to Build Alymera
+
+AI tools were used throughout development as development assistance rather than as a replacement for engineering decisions.
+
+They helped with activities such as:
+
+* Exploring implementation approaches
+* Debugging errors
+* Understanding unfamiliar APIs
+* Generating initial code ideas
+* Refactoring and cleanup
+* Writing and improving tests
+* Reviewing implementation details
+* Improving documentation
+
+The application was still developed through manual testing, debugging, code review, architectural decisions, and iterative changes.
+
+AI-generated suggestions were reviewed and adapted to the actual requirements of Alymera.
+
+---
+
+## Production Status
+
+Alymera is deployed to Vercel as the production capstone application.
+
+The final stage focuses on:
+
+* Production verification
+* Cross-browser checks
+* Final documentation
+* End-to-end testing
+* Capstone submission
+
+The project is intentionally documented around the functionality that is actually implemented rather than planned future features.
+
+---
+
+## Known Limitations
+
+* AI functionality depends on the availability and usage limits of the configured AI provider.
+* AI responses may vary depending on the model and prompt context.
+* Performance can vary depending on device and network conditions.
+* The 3D landing experience adds additional client-side work.
+* Some advanced performance optimizations may be considered in future iterations.
+
+---
+
+## Future Improvements
+
+Potential future improvements include:
+
+* More advanced AI project planning
+* GitHub integration
+* Deeper career analytics
+* More automation around job applications
+* Additional AI providers
+* Further mobile and performance optimization
+* Expanded automated test coverage
+
+---
+
+## Project Background
+
+Alymera was created as the capstone project for the **FlyRank AI Frontend AI Engineer** internship.
+
+The project combines frontend development, full-stack application architecture, database integration, authentication, AI integration, streaming interfaces, tool calling, and production deployment into one application.
+
+---
+
+## Author
+
+**Alyssa Jade P. Merjilla**
+
+Frontend & AI Developer
+
+* Portfolio: `https://ajpm-portfolio.vercel.app/`
+* GitHub: `https://github.com/alijilla`
+* LinkedIn: `https://linkedin.com/in/alyssa-jade-merjilla`
+
+---
+
+## License
+
+This project was created as a personal capstone project.
