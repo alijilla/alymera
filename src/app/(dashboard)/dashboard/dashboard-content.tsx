@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase/client"
 import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
 import {

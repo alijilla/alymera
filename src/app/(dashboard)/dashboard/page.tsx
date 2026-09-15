@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { supabase } from "@/lib/supabase/client"
 import {
   Card,
   CardHeader,
@@ -110,114 +109,125 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
+    let channel: any = null
+    let supabaseClient: any = null
 
-    async function loadDashboard() {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+    async function init() {
+      const { supabase } = await import("@/lib/supabase/client")
+      supabaseClient = supabase
 
-      if (authError) {
-        console.error("Auth error:", authError)
-        if (!cancelled) setLoading(false)
-        return
-      }
-
-      if (!user) {
-        if (!cancelled) setLoading(false)
-        return
-      }
-
-      // Parallelize independent fetches
-      const [profileRes, projectsRes, applicationsRes] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-        supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("applications").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-      ])
-
-      if (profileRes.error) console.error("Profile fetch error:", profileRes.error)
-      if (projectsRes.error) console.error("Projects fetch error:", projectsRes.error)
-      if (applicationsRes.error) console.error("Applications fetch error:", applicationsRes.error)
-
-      const userProjects = projectsRes.data ?? []
-
-      // Tasks (depends on projects)
-      let userTasks: DBTask[] = []
-
-      if (userProjects.length > 0) {
-        const projectIds = userProjects.map((project) => project.id)
-
+      async function loadDashboard() {
         const {
-          data: tasksData,
-          error: tasksError,
-        } = await supabase
-          .from("tasks")
-          .select("*")
-          .in("project_id", projectIds)
-          .order("created_at", { ascending: false })
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser()
 
-        if (tasksError) {
-          console.error("Tasks fetch error:", tasksError)
+        if (authError) {
+          console.error("Auth error:", authError)
+          if (!cancelled) setLoading(false)
+          return
         }
 
-        userTasks = tasksData ?? []
+        if (!user) {
+          if (!cancelled) setLoading(false)
+          return
+        }
+
+        // Parallelize independent fetches
+        const [profileRes, projectsRes, applicationsRes] = await Promise.all([
+          supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+          supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+          supabase.from("applications").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+        ])
+
+        if (profileRes.error) console.error("Profile fetch error:", profileRes.error)
+        if (projectsRes.error) console.error("Projects fetch error:", projectsRes.error)
+        if (applicationsRes.error) console.error("Applications fetch error:", applicationsRes.error)
+
+        const userProjects = projectsRes.data ?? []
+
+        // Tasks (depends on projects)
+        let userTasks: DBTask[] = []
+
+        if (userProjects.length > 0) {
+          const projectIds = userProjects.map((project) => project.id)
+
+          const {
+            data: tasksData,
+            error: tasksError,
+          } = await supabase
+            .from("tasks")
+            .select("*")
+            .in("project_id", projectIds)
+            .order("created_at", { ascending: false })
+
+          if (tasksError) {
+            console.error("Tasks fetch error:", tasksError)
+          }
+
+          userTasks = tasksData ?? []
+        }
+
+        if (cancelled) return
+
+        setFullname(profileRes.data?.full_name ?? "")
+        setProjects(userProjects)
+        setTasks(userTasks)
+        setApplications(applicationsRes.data ?? [])
+        setLoading(false)
       }
 
-      if (cancelled) return
+      await loadDashboard()
 
-      setFullname(profileRes.data?.full_name ?? "")
-      setProjects(userProjects)
-      setTasks(userTasks)
-      setApplications(applicationsRes.data ?? [])
-      setLoading(false)
+      // ==================================================
+      // Realtime dashboard updates
+      // ==================================================
+
+      channel = supabase
+        .channel("dashboard-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "tasks",
+          },
+          () => {
+            void loadDashboard()
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "projects",
+          },
+          () => {
+            void loadDashboard()
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "applications",
+          },
+          () => {
+            void loadDashboard()
+          }
+        )
+        .subscribe()
     }
 
-    void loadDashboard()
-
-    // ==================================================
-    // Realtime dashboard updates
-    // ==================================================
-
-    const channel = supabase
-      .channel("dashboard-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "tasks",
-        },
-        () => {
-          void loadDashboard()
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "projects",
-        },
-        () => {
-          void loadDashboard()
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "applications",
-        },
-        () => {
-          void loadDashboard()
-        }
-      )
-      .subscribe()
+    init()
 
     return () => {
       cancelled = true
-      void supabase.removeChannel(channel)
+      if (channel && supabaseClient) {
+        supabaseClient.removeChannel(channel)
+      }
     }
   }, [])
 
@@ -233,6 +243,7 @@ export default function DashboardPage() {
 
     setUpdatingTaskId(taskId)
 
+    const { supabase } = await import("@/lib/supabase/client")
     const { error } = await supabase
       .from("tasks")
       .update({

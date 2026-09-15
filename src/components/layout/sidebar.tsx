@@ -40,7 +40,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { supabase } from "@/lib/supabase/client"
 
 export function getInitials(name: string) {
   return name
@@ -151,6 +150,7 @@ export function SidebarLayout({
     let cancelled = false
 
     async function loadProfile() {
+      const { supabase } = await import("@/lib/supabase/client")
       const {
         data: { user },
         error: authError,

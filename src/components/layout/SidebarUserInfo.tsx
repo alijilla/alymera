@@ -3,7 +3,6 @@
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { Profile } from "@/types/profile";
-import { supabase} from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 function getInitials(name: string) {
@@ -25,6 +24,7 @@ export  function SidebarUserInfo() {
  const [avatarUrl, setAvatarUrl] = useState("")
   const [fullname, setFullname] = useState("")
  async function handleLogout() {
+      const { supabase } = await import("@/lib/supabase/client")
       const { error } = await supabase.auth.signOut()
   
       if (error) {
@@ -37,6 +37,7 @@ export  function SidebarUserInfo() {
 
 useEffect(() => {
   async function loadProfile() {
+    const { supabase } = await import("@/lib/supabase/client")
     const {
       data: { user },
       error: authErr,
