@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { supabase } from "@/lib/supabase/client"
-import { Canvas } from "@react-three/fiber"
+import Image from "next/image"
 
 import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import {
@@ -245,20 +245,13 @@ const handleSubmit = (text?: string) => {
               <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-3 pb-6 pt-4 text-center sm:px-4 sm:pb-8 sm:pt-8">
                 {/* Mascot */}
                 <div className="mb-5 h-24 w-24 overflow-hidden rounded-full border border-primary/20 bg-primary/10 shadow-sm sm:mb-6 sm:h-32 sm:w-32">
-                  <Canvas
-                    camera={{
-                      position: [0, 0, 3],
-                    }}
-                    dpr={[1, 1.5]}
-                  >
-                    <ambientLight intensity={2} />
-
-                  
-
-                    <group position={[0, -0.5, 0]}>
-                      <Mascot reducedMotion={false} />
-                    </group>
-                  </Canvas>
+                    <Image
+                                  src="/img/mascot.png"
+                                   alt="Alymera AI mascot"
+                                  width={14}
+                                  height={14}
+                                  className="h-full w-full object-contain"
+                                />
                 </div>
 
                 <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">
