@@ -244,15 +244,15 @@ const handleSubmit = (text?: string) => {
 
               <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-3 pb-6 pt-4 text-center sm:px-4 sm:pb-8 sm:pt-8">
                 {/* Mascot */}
-                <div className="mb-5 h-24 w-24 overflow-hidden rounded-full border border-primary/20 bg-primary/10 shadow-sm sm:mb-6 sm:h-32 sm:w-32">
-                   <Image
-                    src="/img/mascot.png"
-                    alt="Alymera AI mascot"
-                    width={64}
-                    height={64}
-                    className="h-8 w-8 object-contain"
-                  />
-                </div>
+               <div className="mb-5 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10 shadow-sm sm:mb-6 sm:h-32 sm:w-32">
+              <Image
+                src="/img/mascot.png"
+                alt="Alymera AI mascot"
+                width={32}
+                height={32}
+                className="h-14 w-14 object-contain"
+              />
+               </div>
 
                 <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   How can I help you today?
