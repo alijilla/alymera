@@ -43,14 +43,14 @@ export const maxDuration = 30
 //})
 
 export async function POST(req: Request) {
-
   const contentLength = req.headers.get("content-length")
 
-if (contentLength && Number(contentLength) > 100_000) {
-  return new Response("Request too large.", {
-    status: 413,
-  })
-}
+  if (contentLength && Number(contentLength) > 100_000) {
+    return new Response("Request too large.", {
+      status: 413,
+    })
+  }
+
   // ============================================================
   // TOOLS
   // ============================================================
@@ -102,6 +102,10 @@ if (contentLength && Number(contentLength) > 100_000) {
       projectId?: string
       conversationId?: string
     } = await req.json()
+
+    // ============================================================
+    // CODING TOOLS
+    // ============================================================
 
     const codingTools = {
       getProjects,
@@ -158,6 +162,95 @@ if (contentLength && Number(contentLength) > 100_000) {
       }
 
       user = authenticatedUser
+    }
+
+    // ============================================================
+    // CURRENT PROJECT CONTEXT
+    // ============================================================
+
+    let currentProjectContext = ""
+
+    if (
+      !demo &&
+      user &&
+      assistant === "coding" &&
+      projectId
+    ) {
+      const {
+        data: currentProject,
+        error: projectError,
+      } = await supabase
+        .from("projects")
+        .select(
+          "id, name, description, status, tech_stack, due_date"
+        )
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (projectError) {
+        console.error(
+          "Current project lookup error:",
+          projectError
+        )
+
+        return new Response(
+          "Failed to load current project.",
+          {
+            status: 500,
+          }
+        )
+      }
+
+      if (!currentProject) {
+        return new Response(
+          "Current project not found.",
+          {
+            status: 404,
+          }
+        )
+      }
+
+      currentProjectContext = `
+==================================================
+CURRENT PROJECT CONTEXT
+==================================================
+
+The user is currently inside this project workspace.
+
+Project name:
+${currentProject.name}
+
+Project ID:
+${currentProject.id}
+
+Description:
+${currentProject.description || "Not provided"}
+
+Status:
+${currentProject.status || "Not provided"}
+
+Tech stack:
+${
+  Array.isArray(currentProject.tech_stack)
+    ? currentProject.tech_stack.join(", ")
+    : currentProject.tech_stack || "Not provided"
+}
+
+Due date:
+${currentProject.due_date || "Not provided"}
+
+When the user refers to:
+- "my current project"
+- "this project"
+- "the project I'm in"
+- "this workspace"
+
+they mean this project.
+
+Do not ask the user which project they mean when
+this current project context is available.
+`
     }
 
     // ============================================================
@@ -533,8 +626,11 @@ of a specific employer or role.
     // FINAL SYSTEM PROMPT
     // ============================================================
 
-    const basePrompt =
-      featurePrompt ?? selectedPrompt
+    const basePrompt = `
+${featurePrompt ?? selectedPrompt}
+
+${currentProjectContext}
+`
 
     // ============================================================
     // SAVE USER MESSAGE
@@ -603,15 +699,15 @@ of a specific employer or role.
     }
 
     // ============================================================
-    // STREAM AI RESPONSE model: groq("openai/gpt-oss-120b"),  model: google("gemini-3.6-flash"),
+    // STREAM AI RESPONSE
     // ============================================================
 
     let aiErrorMessage =
       "AI is temporarily unavailable. Please try again later."
 
     const result = streamText({
-     
       model: groq("openai/gpt-oss-120b"),
+
       system: basePrompt,
 
       messages:
