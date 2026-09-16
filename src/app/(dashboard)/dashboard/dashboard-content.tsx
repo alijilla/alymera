@@ -477,6 +477,7 @@ export default function DashboardContent({
                 >
                   <Checkbox
                     id={`task-${task.id}`}
+                    aria-label={`Mark ${task.name} as complete`}
                     checked={task.status === "Done"}
                     disabled={
                       task.status === "Done" ||
