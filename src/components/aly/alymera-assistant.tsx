@@ -271,9 +271,6 @@ const handleSubmit = (text?: string) => {
                   next.
                 </p>
 
-                {/* AI model */}
-                <div className="mt-4 flex items-center gap-2 rounded-full border border-border/50 bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
-                </div>
 
                 {/* Suggested prompts */}
                 <div className="mt-8 w-full max-w-2xl sm:mt-10">
