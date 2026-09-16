@@ -1,0 +1,586 @@
+﻿src\proxy.ts : import { createServerClient } from "@supabase/ssr"
+src\proxy.ts : import { NextResponse, type NextRequest } from "next/server"
+src\app\layout.tsx : import type { Metadata } from "next";
+src\app\layout.tsx : import { Geist, Geist_Mono } from "next/font/google";
+src\app\layout.tsx : import { Toaster } from "@/components/ui/sonner"
+src\app\page.tsx : import { useRouter } from "next/navigation"
+src\app\page.tsx : import dynamic from "next/dynamic"
+src\app\page.tsx : import { ArrowRight, Sparkles } from "lucide-react"
+src\app\(auth)\login\page.tsx : import { useEffect, useState } from "react"
+src\app\(auth)\login\page.tsx : import dynamic from "next/dynamic"
+src\app\(auth)\login\page.tsx : import Link from "next/link"
+src\app\(auth)\login\page.tsx : import { useRouter } from "next/navigation"
+src\app\(auth)\login\page.tsx : import { z } from "zod"
+src\app\(auth)\login\page.tsx : import { useForm } from "react-hook-form"
+src\app\(auth)\login\page.tsx : import { zodResolver } from "@hookform/resolvers/zod"
+src\app\(auth)\login\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(auth)\login\page.tsx : import { logInSchema } from "@/lib/schemas/logIn"
+src\app\(auth)\login\page.tsx : import { Card, CardContent, CardFooter } from "@/components/ui/card"
+src\app\(auth)\login\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(auth)\login\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(auth)\login\page.tsx : import { toast } from "sonner"
+src\app\(auth)\login\page.tsx : import { Sparkles, ArrowLeft } from "lucide-react"
+src\app\(auth)\login\page.tsx : import { Spinner } from "@/components/ui/spinner"
+src\app\(auth)\login\page.tsx : import { Canvas } from "@react-three/fiber"
+src\app\(auth)\signup\page.tsx : import { useEffect, useState } from "react"
+src\app\(auth)\signup\page.tsx : import dynamic from "next/dynamic"
+src\app\(auth)\signup\page.tsx : import Link from "next/link"
+src\app\(auth)\signup\page.tsx : import { useRouter } from "next/navigation"
+src\app\(auth)\signup\page.tsx : import { z } from "zod"
+src\app\(auth)\signup\page.tsx : import { useForm } from "react-hook-form"
+src\app\(auth)\signup\page.tsx : import { zodResolver } from "@hookform/resolvers/zod"
+src\app\(auth)\signup\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(auth)\signup\page.tsx : import { SignUpSchema } from "@/lib/schemas/logIn"
+src\app\(auth)\signup\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(auth)\signup\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(auth)\signup\page.tsx : import { toast } from "sonner"
+src\app\(auth)\signup\page.tsx : import { ArrowLeft, Sparkles } from "lucide-react"
+src\app\(auth)\signup\page.tsx : import { Spinner } from "@/components/ui/spinner"
+src\app\(auth)\signup\page.tsx : import { Canvas } from "@react-three/fiber"
+src\app\(dashboard)\layout.tsx : import { SidebarLayout } from "@/components/layout/sidebar";
+src\app\(dashboard)\aly\page.tsx : import { Sparkles, ShieldCheck } from "lucide-react"
+src\app\(dashboard)\aly\page.tsx : import { Card, CardDescription, CardTitle } from "@/components/ui/card"
+src\app\(dashboard)\aly\page.tsx : import { AlymeraAssistant } from "@/components/aly/alymera-assistant"
+src\app\(dashboard)\build\page.tsx : import { useState, useEffect } from "react"
+src\app\(dashboard)\build\page.tsx : import { z } from "zod"
+src\app\(dashboard)\build\page.tsx : import { useForm, useFieldArray } from "react-hook-form"
+src\app\(dashboard)\build\page.tsx : import { zodResolver } from "@hookform/resolvers/zod"
+src\app\(dashboard)\build\page.tsx : import { newProjectSchema } from "@/lib/schemas/newproject"
+src\app\(dashboard)\build\page.tsx : import { format, parseISO } from "date-fns"
+src\app\(dashboard)\build\page.tsx : import Link from "next/link"
+src\app\(dashboard)\build\page.tsx : import Image from "next/image"
+src\app\(dashboard)\build\page.tsx : import { Progress } from "@/components/ui/progress"
+src\app\(dashboard)\build\page.tsx : import { Badge } from "@/components/ui/badge"
+src\app\(dashboard)\build\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(dashboard)\build\page.tsx : import dynamic from "next/dynamic"
+src\app\(dashboard)\build\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\build\page.tsx : import { toast } from "sonner"
+src\app\(dashboard)\build\page.tsx : import { makeArray } from "@/lib/utils"
+src\app\(dashboard)\build\projects\[id]\page.tsx : import ProjectWorkSpace from "./project-workspace"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import {  useEffect, useState } from "react"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import Link from "next/link"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { ArrowLeft } from "lucide-react"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { Input } from "@/components/ui/input"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { Roadmap } from "@/components/build/roadmap"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { CodingAssistant } from "@/components/build/coding-assistant"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { Overview } from "@/components/build/overview"
+src\app\(dashboard)\build\projects\[id]\project-workspace.tsx : import { Kanban } from "@/components/build/kanban"
+src\app\(dashboard)\build\projects\[id]\__tests__\ProjectWorkspace.test.tsx : import { render, screen } from "@testing-library/react"
+src\app\(dashboard)\build\projects\[id]\__tests__\ProjectWorkspace.test.tsx : import ProjectWorkSpace from "../project-workspace"
+src\app\(dashboard)\career\page.tsx : import CareerOverview from "@/app/(dashboard)/career/overview/page"
+src\app\(dashboard)\career\applications\page.tsx : import { useEffect, useState } from "react";
+src\app\(dashboard)\career\applications\page.tsx : import { Button } from "@/components/ui/button";
+src\app\(dashboard)\career\applications\page.tsx : import { Input } from "@/components/ui/input";
+src\app\(dashboard)\career\applications\page.tsx : import { Trash2, Edit, Plus, Send } from "lucide-react";
+src\app\(dashboard)\career\applications\page.tsx : import { supabase } from "@/lib/supabase/client";
+src\app\(dashboard)\career\applications\__tests__\Applications.test.tsx : import { render, screen } from "@testing-library/react"
+src\app\(dashboard)\career\applications\__tests__\Applications.test.tsx : import ApplicationsPage from "../page"
+src\app\(dashboard)\career\assistant\page.tsx : import { CareerAssistant } from "@/components/career/assistant";
+src\app\(dashboard)\career\overview\page.tsx : import { useEffect, useMemo, useState } from "react"
+src\app\(dashboard)\career\overview\page.tsx : import Link from "next/link"
+src\app\(dashboard)\career\overview\page.tsx : import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+src\app\(dashboard)\career\overview\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\career\overview\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(dashboard)\career\resume\page.tsx : import { useEffect, useState } from "react"
+src\app\(dashboard)\career\resume\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(dashboard)\career\resume\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\career\resume\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(dashboard)\career\resume\page.tsx : import { Textarea } from "@/components/ui/textarea"
+src\app\(dashboard)\career\resume\page.tsx : import { Label } from "@/components/ui/label"
+src\app\(dashboard)\career\resume\page.tsx : import { Checkbox } from "@/components/ui/checkbox"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import { useEffect, useState } from "react"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import Link from "next/link"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import Image from "next/image"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import { Progress } from "@/components/ui/progress"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import { Checkbox } from "@/components/ui/checkbox"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\dashboard\dashboard-content.tsx : import { Label } from "@/components/ui/label"
+src\app\(dashboard)\dashboard\page.tsx : import { useEffect, useState } from "react"
+src\app\(dashboard)\dashboard\page.tsx : import Link from "next/link"
+src\app\(dashboard)\dashboard\page.tsx : import dynamic from "next/dynamic"
+src\app\(dashboard)\dashboard\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\dashboard\page.tsx : import { Label } from "@/components/ui/label"
+src\app\(dashboard)\dashboard\page.tsx : import { Sparkles } from "lucide-react"
+src\app\(dashboard)\history\page.tsx : import { useEffect, useState } from "react"
+src\app\(dashboard)\history\page.tsx : import { useRouter } from "next/navigation"
+src\app\(dashboard)\history\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(dashboard)\history\page.tsx : import { HistoryHeader } from "@/components/history/HistoryHeaders"
+src\app\(dashboard)\history\page.tsx : import { HistoryFilters } from "@/components/history/HistoryFilters"
+src\app\(dashboard)\history\page.tsx : import { HistoryList } from "@/components/history/HistoryList"
+src\app\(dashboard)\history\page.tsx : import { HistoryItem } from "@/components/history/HistoryCard"
+src\app\(dashboard)\profile\page.tsx : import { useEffect, useState } from "react"
+src\app\(dashboard)\profile\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\profile\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(dashboard)\profile\page.tsx : import { Label } from "@/components/ui/label"
+src\app\(dashboard)\profile\page.tsx : import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+src\app\(dashboard)\profile\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\(dashboard)\settings\page.tsx : import { useState } from "react"
+src\app\(dashboard)\settings\page.tsx : import { Button } from "@/components/ui/button"
+src\app\(dashboard)\settings\page.tsx : import { Input } from "@/components/ui/input"
+src\app\(dashboard)\settings\page.tsx : import { Label } from "@/components/ui/label"
+src\app\(dashboard)\settings\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\aly-demo\page.tsx : import { AlymeraAssistant } from "@/components/aly/alymera-assistant"
+src\app\api\alymera\route.ts : import { groq } from "@ai-sdk/groq"
+src\app\api\alymera\route.ts : import { createClient } from "@/lib/supabase/server"
+src\app\test-delete\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-logout\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-project\page.tsx : import {useState} from "react"
+src\app\test-project\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-projects\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-supabase\page.tsx : import { useEffect } from "react"
+src\app\test-supabase\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-update\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\app\test-user\page.tsx : import { useEffect } from "react"
+src\app\test-user\page.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\ai-elements\agent.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\agent.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\agent.tsx : import type { Tool } from "ai";
+src\components\ai-elements\agent.tsx : import { BotIcon } from "lucide-react";
+src\components\ai-elements\agent.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\agent.tsx : import { memo } from "react";
+src\components\ai-elements\agent.tsx : import { CodeBlock } from "./code-block";
+src\components\ai-elements\artifact.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\artifact.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\artifact.tsx : import type { LucideIcon } from "lucide-react";
+src\components\ai-elements\artifact.tsx : import { XIcon } from "lucide-react";
+src\components\ai-elements\artifact.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\attachments.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\attachments.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\attachments.tsx : import type { FileUIPart, SourceDocumentUIPart } from "ai";
+src\components\ai-elements\attachments.tsx : import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
+src\components\ai-elements\attachments.tsx : import { createContext, useCallback, useContext, useMemo } from "react";
+src\components\ai-elements\audio-player.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\audio-player.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\audio-player.tsx : import type { Experimental_SpeechResult as SpeechResult } from "ai";
+src\components\ai-elements\audio-player.tsx : import type { ComponentProps, CSSProperties } from "react";
+src\components\ai-elements\canvas.tsx : import type { ReactFlowProps } from "@xyflow/react";
+src\components\ai-elements\canvas.tsx : import { Background, ReactFlow } from "@xyflow/react";
+src\components\ai-elements\canvas.tsx : import type { ReactNode } from "react";
+src\components\ai-elements\chain-of-thought.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\chain-of-thought.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\chain-of-thought.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\chain-of-thought.tsx : import type { LucideIcon } from "lucide-react";
+src\components\ai-elements\chain-of-thought.tsx : import { BrainIcon, ChevronDownIcon, DotIcon } from "lucide-react";
+src\components\ai-elements\chain-of-thought.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\chain-of-thought.tsx : import { createContext, memo, useContext, useMemo } from "react";
+src\components\ai-elements\checkpoint.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\checkpoint.tsx : import { Separator } from "@/components/ui/separator";
+src\components\ai-elements\checkpoint.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\checkpoint.tsx : import type { LucideProps } from "lucide-react";
+src\components\ai-elements\checkpoint.tsx : import { BookmarkIcon } from "lucide-react";
+src\components\ai-elements\checkpoint.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\code-block.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\code-block.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\code-block.tsx : import { CheckIcon, CopyIcon } from "lucide-react";
+src\components\ai-elements\code-block.tsx : import type { ComponentProps, CSSProperties, HTMLAttributes } from "react";
+src\components\ai-elements\code-block.tsx : import { createHighlighter } from "shiki";
+src\components\ai-elements\commit.tsx : import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+src\components\ai-elements\commit.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\commit.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\commit.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\commit.tsx : import { useCallback, useEffect, useRef, useState } from "react";
+src\components\ai-elements\confirmation.tsx : import { Alert, AlertDescription } from "@/components/ui/alert";
+src\components\ai-elements\confirmation.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\confirmation.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\confirmation.tsx : import type { ToolUIPart } from "ai";
+src\components\ai-elements\confirmation.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\confirmation.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\connection.tsx : import type { ConnectionLineComponent } from "@xyflow/react";
+src\components\ai-elements\context.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\context.tsx : import { Progress } from "@/components/ui/progress";
+src\components\ai-elements\context.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\context.tsx : import type { LanguageModelUsage } from "ai";
+src\components\ai-elements\context.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\context.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\context.tsx : import { getUsage } from "tokenlens";
+src\components\ai-elements\controls.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\controls.tsx : import { Controls as ControlsPrimitive } from "@xyflow/react";
+src\components\ai-elements\controls.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\conversation.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\conversation.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\conversation.tsx : import type { UIMessage } from "ai";
+src\components\ai-elements\conversation.tsx : import { ArrowDownIcon, DownloadIcon } from "lucide-react";
+src\components\ai-elements\conversation.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\conversation.tsx : import { useCallback } from "react";
+src\components\ai-elements\conversation.tsx : import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
+src\components\ai-elements\edge.tsx : import type { EdgeProps, InternalNode, Node } from "@xyflow/react";
+src\components\ai-elements\environment-variables.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\environment-variables.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\environment-variables.tsx : import { Switch } from "@/components/ui/switch";
+src\components\ai-elements\environment-variables.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\environment-variables.tsx : import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+src\components\ai-elements\environment-variables.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\file-tree.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\file-tree.tsx : import type { HTMLAttributes, ReactNode } from "react";
+src\components\ai-elements\image.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\image.tsx : import type { Experimental_GeneratedImage } from "ai";
+src\components\ai-elements\inline-citation.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\inline-citation.tsx : import type { CarouselApi } from "@/components/ui/carousel";
+src\components\ai-elements\inline-citation.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\inline-citation.tsx : import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+src\components\ai-elements\inline-citation.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\jsx-preview.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\jsx-preview.tsx : import { AlertCircle } from "lucide-react";
+src\components\ai-elements\jsx-preview.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\jsx-preview.tsx : import type { TProps as JsxParserProps } from "react-jsx-parser";
+src\components\ai-elements\jsx-preview.tsx : import JsxParser from "react-jsx-parser";
+src\components\ai-elements\message.tsx : import Image from "next/image";
+src\components\ai-elements\message.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\message.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\message.tsx : import { code } from "@streamdown/code";
+src\components\ai-elements\message.tsx : import type { UIMessage } from "ai";
+src\components\ai-elements\message.tsx : import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+src\components\ai-elements\message.tsx : import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
+src\components\ai-elements\message.tsx : import { Streamdown } from "streamdown";
+src\components\ai-elements\message.tsx : export const Message = ({ className, from, ...props }: MessageProps) => (
+src\components\ai-elements\mic-selector.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\mic-selector.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\mic-selector.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\mic-selector.tsx : import { ChevronsUpDownIcon } from "lucide-react";
+src\components\ai-elements\mic-selector.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\model-selector.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\model-selector.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\node.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\node.tsx : import { Handle, Position } from "@xyflow/react";
+src\components\ai-elements\node.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\open-in-chat.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\open-in-chat.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\open-in-chat.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\open-in-chat.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\package-info.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\package-info.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\package-info.tsx : import { ArrowRightIcon, MinusIcon, PackageIcon, PlusIcon } from "lucide-react";
+src\components\ai-elements\package-info.tsx : import type { HTMLAttributes } from "react";
+src\components\ai-elements\package-info.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\panel.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\panel.tsx : import { Panel as PanelPrimitive } from "@xyflow/react";
+src\components\ai-elements\panel.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\persona.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\persona.tsx : import type { RiveParameters } from "@rive-app/react-webgl2";
+src\components\ai-elements\persona.tsx : import type { FC, ReactNode } from "react";
+src\components\ai-elements\persona.tsx : import { memo, useEffect, useMemo, useRef, useState } from "react";
+src\components\ai-elements\plan.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\plan.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\plan.tsx : import { ChevronsUpDownIcon } from "lucide-react";
+src\components\ai-elements\plan.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\plan.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\plan.tsx : import { Shimmer } from "./shimmer";
+src\components\ai-elements\prompt-input.tsx : import { Spinner } from "@/components/ui/spinner";
+src\components\ai-elements\prompt-input.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\prompt-input.tsx : import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
+src\components\ai-elements\prompt-input.tsx : import { nanoid } from "nanoid";
+src\components\ai-elements\queue.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\queue.tsx : import { ScrollArea } from "@/components/ui/scroll-area";
+src\components\ai-elements\queue.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\queue.tsx : import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
+src\components\ai-elements\queue.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\reasoning.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\reasoning.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\reasoning.tsx : import { cjk } from "@streamdown/cjk";
+src\components\ai-elements\reasoning.tsx : import { code } from "@streamdown/code";
+src\components\ai-elements\reasoning.tsx : import { math } from "@streamdown/math";
+src\components\ai-elements\reasoning.tsx : import { mermaid } from "@streamdown/mermaid";
+src\components\ai-elements\reasoning.tsx : import { BrainIcon, ChevronDownIcon } from "lucide-react";
+src\components\ai-elements\reasoning.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\reasoning.tsx : import { Streamdown } from "streamdown";
+src\components\ai-elements\reasoning.tsx : import { Shimmer } from "./shimmer";
+src\components\ai-elements\sandbox.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\sandbox.tsx : import type { ToolUIPart } from "ai";
+src\components\ai-elements\sandbox.tsx : import { ChevronDownIcon, Code } from "lucide-react";
+src\components\ai-elements\sandbox.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\sandbox.tsx : import { getStatusBadge } from "./tool";
+src\components\ai-elements\schema-display.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\schema-display.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\schema-display.tsx : import { ChevronRightIcon } from "lucide-react";
+src\components\ai-elements\schema-display.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\schema-display.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\shimmer.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\shimmer.tsx : import type { MotionProps } from "motion/react";
+src\components\ai-elements\shimmer.tsx : import { motion } from "motion/react";
+src\components\ai-elements\shimmer.tsx : import type { CSSProperties, ElementType, JSX } from "react";
+src\components\ai-elements\shimmer.tsx : import { memo, useMemo } from "react";
+src\components\ai-elements\snippet.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\snippet.tsx : import { CheckIcon, CopyIcon } from "lucide-react";
+src\components\ai-elements\snippet.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\sources.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\sources.tsx : import { BookIcon, ChevronDownIcon } from "lucide-react";
+src\components\ai-elements\sources.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\speech-input.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\speech-input.tsx : import { Spinner } from "@/components/ui/spinner";
+src\components\ai-elements\speech-input.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\speech-input.tsx : import { MicIcon, SquareIcon } from "lucide-react";
+src\components\ai-elements\speech-input.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\speech-input.tsx : import { useCallback, useEffect, useRef, useState } from "react";
+src\components\ai-elements\stack-trace.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\stack-trace.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\stack-trace.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\stack-trace.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\suggestion.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\suggestion.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\suggestion.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\suggestion.tsx : import { useCallback } from "react";
+src\components\ai-elements\task.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\task.tsx : import { ChevronDownIcon, SearchIcon } from "lucide-react";
+src\components\ai-elements\task.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\test-results.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\test-results.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\test-results.tsx : import type { ComponentProps, HTMLAttributes } from "react";
+src\components\ai-elements\test-results.tsx : import { createContext, useContext, useMemo } from "react";
+src\components\ai-elements\tool.tsx : import { Badge } from "@/components/ui/badge";
+src\components\ai-elements\tool.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\tool.tsx : import type { DynamicToolUIPart, ToolUIPart } from "ai";
+src\components\ai-elements\tool.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\tool.tsx : import { isValidElement } from "react";
+src\components\ai-elements\tool.tsx : import { CodeBlock } from "./code-block";
+src\components\ai-elements\toolbar.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\toolbar.tsx : import { NodeToolbar, Position } from "@xyflow/react";
+src\components\ai-elements\toolbar.tsx : import type { ComponentProps } from "react";
+src\components\ai-elements\transcription.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\transcription.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\transcription.tsx : import type { Experimental_TranscriptionResult as TranscriptionResult } from "ai";
+src\components\ai-elements\transcription.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\transcription.tsx : import { createContext, useCallback, useContext, useMemo } from "react";
+src\components\ai-elements\voice-selector.tsx : import { useControllableState } from "@radix-ui/react-use-controllable-state";
+src\components\ai-elements\voice-selector.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\voice-selector.tsx : import { Spinner } from "@/components/ui/spinner";
+src\components\ai-elements\voice-selector.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\voice-selector.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\ai-elements\voice-selector.tsx : import { createContext, useCallback, useContext, useMemo } from "react";
+src\components\ai-elements\web-preview.tsx : import { Button } from "@/components/ui/button";
+src\components\ai-elements\web-preview.tsx : import { Input } from "@/components/ui/input";
+src\components\ai-elements\web-preview.tsx : import { cn } from "@/lib/utils";
+src\components\ai-elements\web-preview.tsx : import { ChevronDownIcon } from "lucide-react";
+src\components\ai-elements\web-preview.tsx : import type { ComponentProps, ReactNode } from "react";
+src\components\aly\alymera-assistant.tsx : import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
+src\components\aly\alymera-assistant.tsx : import { useEffect, useState } from "react"
+src\components\aly\alymera-assistant.tsx : import { useChat } from "@ai-sdk/react"
+src\components\aly\alymera-assistant.tsx : import { DefaultChatTransport } from "ai"
+src\components\aly\alymera-assistant.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\aly\alymera-assistant.tsx : import { Canvas } from "@react-three/fiber"
+src\components\aly\alymera-assistant.tsx : import type { DynamicToolUIPart, ToolUIPart } from "ai"
+src\components\aly\alymera-assistant.tsx : import Mascot from "@/components/hero/Mascot"
+src\components\aly\alymera-assistant.tsx : import { Button } from "@/components/ui/button"
+src\components\aly\__tests__\alymera-assistant.test.tsx : import { render, screen } from "@testing-library/react"
+src\components\aly\__tests__\alymera-assistant.test.tsx : import { AlymeraAssistant } from "../alymera-assistant"
+src\components\build\coding-assistant.tsx : import { useEffect, useState } from "react"
+src\components\build\coding-assistant.tsx : import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
+src\components\build\coding-assistant.tsx : import { useChat } from "@ai-sdk/react"
+src\components\build\coding-assistant.tsx : import { DefaultChatTransport } from "ai"
+src\components\build\coding-assistant.tsx : import type { DynamicToolUIPart, ToolUIPart } from "ai"
+src\components\build\coding-assistant.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\build\coding-assistant.tsx : import { Bug, Lightbulb, ListTodo, Notebook, RotateCcw, Sparkle, Sparkles } from "lucide-react"
+src\components\build\coding-assistant.tsx : import { Button } from "../ui/button"
+src\components\build\kanban.tsx : import { useCallback, useEffect, useState } from "react"
+src\components\build\kanban.tsx : import { format, parseISO } from "date-fns"
+src\components\build\kanban.tsx : import { z } from "zod"
+src\components\build\kanban.tsx : import { useForm } from "react-hook-form"
+src\components\build\kanban.tsx : import { zodResolver } from "@hookform/resolvers/zod"
+src\components\build\kanban.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\build\kanban.tsx : import { tasksSchema } from "@/lib/schemas/taskSchema"
+src\components\build\kanban.tsx : import { DragDropProvider } from "@dnd-kit/react"
+src\components\build\kanban.tsx : import { useDraggable, useDroppable } from "@dnd-kit/react"
+src\components\build\kanban.tsx : import { toast } from "sonner"
+src\components\build\kanban.tsx : import { Button } from "@/components/ui/button"
+src\components\build\kanban.tsx : import { Input } from "@/components/ui/input"
+src\components\build\kanban.tsx : import { Calendar } from "@/components/ui/calendar"
+src\components\build\overview.tsx : import { useState, useEffect } from "react"
+src\components\build\overview.tsx : import Link from "next/link"
+src\components\build\overview.tsx : import { Badge } from "@/components/ui/badge"
+src\components\build\overview.tsx : import { Progress } from "@/components/ui/progress"
+src\components\build\overview.tsx : import { Button } from "@/components/ui/button"
+src\components\build\overview.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\build\roadmap.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\build\roadmap.tsx : import { useState, useEffect } from "react"
+src\components\build\roadmap.tsx : import { Badge } from "@/components/ui/badge"
+src\components\build\roadmap.tsx : import { Card, CardContent } from "@/components/ui/card"
+src\components\career\assistant.tsx : import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
+src\components\career\assistant.tsx : import { useEffect, useState } from "react"
+src\components\career\assistant.tsx : import { useChat } from "@ai-sdk/react"
+src\components\career\assistant.tsx : import { DefaultChatTransport } from "ai"
+src\components\career\assistant.tsx : import { supabase } from "@/lib/supabase/client"
+src\components\career\assistant.tsx : import type { DynamicToolUIPart, ToolUIPart } from "ai"
+src\components\career\assistant.tsx : import { Button } from "@/components/ui/button"
+src\components\career\StatsCard.tsx : import React from "react";
+src\components\career\StatsCard.tsx : import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+src\components\career\__tests__\StatsCard.test.tsx : import { render, screen } from "@testing-library/react"
+src\components\career\__tests__\StatsCard.test.tsx : import { StatsCard } from "../StatsCard"
+src\components\hero\Backgroundshader.tsx : import React from 'react';
+src\components\hero\Backgroundshader.tsx : import { useRef } from 'react';
+src\components\hero\Backgroundshader.tsx : import { useFrame, useThree } from '@react-three/fiber';
+src\components\hero\Backgroundshader.tsx : import * as THREE from 'three';
+src\components\hero\Mascot.tsx : import { useRef } from "react";
+src\components\hero\Mascot.tsx : import { useFrame, useThree  } from "@react-three/fiber";
+src\components\hero\Mascot.tsx : import * as THREE from "three"
+src\components\hero\Mascot.tsx : import {useState} from "react"
+src\components\hero\TestScene.tsx : import React, { useEffect, useState } from "react"
+src\components\hero\TestScene.tsx : import { Canvas } from "@react-three/fiber"
+src\components\hero\TestScene.tsx : import { Float } from "@react-three/drei"
+src\components\hero\TestScene.tsx : import Mascot from "@/components/hero/Mascot"
+src\components\hero\TestScene.tsx : import Workspace from "@/components/hero/Workspace"
+src\components\hero\TestScene.tsx : import BackgroundShader from "./Backgroundshader"
+src\components\hero\Workspace.tsx : import { Check, ArrowRight, Briefcase, FolderKanban } from "lucide-react"
+src\components\hero\Workspace.tsx : import { Card, CardContent } from "@/components/ui/card"
+src\components\hero\Workspace.tsx : import { Progress } from "@/components/ui/progress"
+src\components\hero\Workspace.tsx : import { Badge } from "@/components/ui/badge"
+src\components\hero\Workspace.tsx : import React from "react";
+src\components\hero\Workspace.tsx : import { Html } from '@react-three/drei'
+src\components\history\EmptyHistory.tsx : import { MessageSquare } from "lucide-react"
+src\components\history\HistoryCard.tsx : import { Button } from "@/components/ui/button"
+src\components\history\HistoryCard.tsx : import { cn } from "@/lib/utils"
+src\components\history\HistoryFilters.tsx : import { Search } from "lucide-react"
+src\components\history\HistoryFilters.tsx : import { Input } from "@/components/ui/input"
+src\components\history\HistoryHeaders.tsx : import { Clock, Trash2 } from "lucide-react"
+src\components\history\HistoryList.tsx : import { EmptyHistory } from "./EmptyHistory"
+src\components\layout\header.tsx : import { usePathname } from "next/navigation"
+src\components\layout\header.tsx : import { HeaderUserInfo } from "./HeaderUserInfo"
+src\components\layout\HeaderUserInfo.tsx : import React from "react";
+src\components\layout\sidebar.tsx : import Link from "next/link"
+src\components\layout\sidebar.tsx : import { useEffect, useState } from "react"
+src\components\layout\sidebar.tsx : import { Header } from "@/components/layout/header"
+src\components\layout\sidebar.tsx : import { SidebarUserInfo } from "./SidebarUserInfo"
+src\components\layout\sidebar.tsx : import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+src\components\layout\SidebarUserInfo.tsx : import { LogOut } from "lucide-react";
+src\components\layout\SidebarUserInfo.tsx : import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+src\components\layout\SidebarUserInfo.tsx : import type { Profile } from "@/types/profile";
+src\components\layout\SidebarUserInfo.tsx : import { useState, useEffect } from "react"
+src\components\layout\SidebarUserInfo.tsx : import { useRouter } from "next/navigation"
+src\components\layout\SidebarUserInfo.tsx : import Image from "next/image"
+src\components\layout\__tests_\sidebar.test.tsx : import { render, screen } from "@testing-library/react"
+src\components\layout\__tests_\sidebar.test.tsx : import { SidebarLayout } from "../sidebar"
+src\components\ui\accordion.tsx : import * as React from "react"
+src\components\ui\accordion.tsx : import { cn } from "cn"
+src\components\ui\accordion.tsx : import { ChevronDownIcon } from "lucide-react"
+src\components\ui\accordion.tsx : import { Accordion as AccordionPrimitive } from "radix-ui"
+src\components\ui\alert.tsx : import * as React from "react"
+src\components\ui\alert.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\alert.tsx : import { cn } from "cn"
+src\components\ui\avatar.tsx : import * as React from "react"
+src\components\ui\avatar.tsx : import { cn } from "cn"
+src\components\ui\avatar.tsx : import { Avatar as AvatarPrimitive } from "radix-ui"
+src\components\ui\badge.tsx : import * as React from "react"
+src\components\ui\badge.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\badge.tsx : import { cn } from "cn"
+src\components\ui\badge.tsx : import { Slot } from "radix-ui"
+src\components\ui\button-group.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\button-group.tsx : import { cn } from "cn"
+src\components\ui\button-group.tsx : import { Slot } from "radix-ui"
+src\components\ui\button-group.tsx : import { Separator } from "@/components/ui/separator"
+src\components\ui\button.tsx : import * as React from "react"
+src\components\ui\button.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\button.tsx : import { cn } from "cn"
+src\components\ui\button.tsx : import { Slot } from "radix-ui"
+src\components\ui\calendar.tsx : import * as React from "react"
+src\components\ui\calendar.tsx : import { cn } from "cn"
+src\components\ui\calendar.tsx : import { Button, buttonVariants } from "@/components/ui/button"
+src\components\ui\card.tsx : import * as React from "react"
+src\components\ui\card.tsx : import { cn } from "cn"
+src\components\ui\carousel.tsx : import * as React from "react"
+src\components\ui\carousel.tsx : import { cn } from "cn"
+src\components\ui\carousel.tsx : import { ArrowLeft, ArrowRight } from "lucide-react"
+src\components\ui\carousel.tsx : import { Button } from "@/components/ui/button"
+src\components\ui\checkbox.tsx : import * as React from "react"
+src\components\ui\checkbox.tsx : import { Checkbox as CheckboxPrimitive } from "radix-ui"
+src\components\ui\checkbox.tsx : import { cn } from "@/lib/utils"
+src\components\ui\checkbox.tsx : import { CheckIcon } from "lucide-react"
+src\components\ui\collapsible.tsx : import { Collapsible as CollapsiblePrimitive } from "radix-ui"
+src\components\ui\command.tsx : import * as React from "react"
+src\components\ui\command.tsx : import { Command as CommandPrimitive } from "cmdk"
+src\components\ui\command.tsx : import { cn } from "cn"
+src\components\ui\command.tsx : import { SearchIcon } from "lucide-react"
+src\components\ui\dialog.tsx : import * as React from "react"
+src\components\ui\dialog.tsx : import { cn } from "cn"
+src\components\ui\dialog.tsx : import { XIcon } from "lucide-react"
+src\components\ui\dialog.tsx : import { Dialog as DialogPrimitive } from "radix-ui"
+src\components\ui\dialog.tsx : import { Button } from "@/components/ui/button"
+src\components\ui\dropdown-menu.tsx : import * as React from "react"
+src\components\ui\dropdown-menu.tsx : import { cn } from "cn"
+src\components\ui\dropdown-menu.tsx : import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
+src\components\ui\dropdown-menu.tsx : import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
+src\components\ui\form.tsx : import * as React from "react"
+src\components\ui\form.tsx : import type { Label as LabelPrimitive } from "radix-ui"
+src\components\ui\form.tsx : import { Slot } from "radix-ui"
+src\components\ui\form.tsx : import { cn } from "@/lib/utils"
+src\components\ui\form.tsx : import { Label } from "@/components/ui/label"
+src\components\ui\hover-card.tsx : import * as React from "react"
+src\components\ui\hover-card.tsx : import { cn } from "cn"
+src\components\ui\hover-card.tsx : import { HoverCard as HoverCardPrimitive } from "radix-ui"
+src\components\ui\input-group.tsx : import * as React from "react"
+src\components\ui\input-group.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\input-group.tsx : import { cn } from "cn"
+src\components\ui\input-group.tsx : import { Button } from "@/components/ui/button"
+src\components\ui\input-group.tsx : import { Input } from "@/components/ui/input"
+src\components\ui\input-group.tsx : import { Textarea } from "@/components/ui/textarea"
+src\components\ui\input.tsx : import * as React from "react"
+src\components\ui\input.tsx : import { cn } from "cn"
+src\components\ui\label.tsx : import * as React from "react"
+src\components\ui\label.tsx : import { Label as LabelPrimitive } from "radix-ui"
+src\components\ui\label.tsx : import { cn } from "@/lib/utils"
+src\components\ui\popover.tsx : import * as React from "react"
+src\components\ui\popover.tsx : import { cn } from "cn"
+src\components\ui\popover.tsx : import { Popover as PopoverPrimitive } from "radix-ui"
+src\components\ui\progress.tsx : import * as React from "react"
+src\components\ui\progress.tsx : import { cn } from "cn"
+src\components\ui\progress.tsx : import { Progress as ProgressPrimitive } from "radix-ui"
+src\components\ui\scroll-area.tsx : import * as React from "react"
+src\components\ui\scroll-area.tsx : import { cn } from "cn"
+src\components\ui\scroll-area.tsx : import { ScrollArea as ScrollAreaPrimitive } from "radix-ui"
+src\components\ui\select.tsx : import * as React from "react"
+src\components\ui\select.tsx : import { cn } from "cn"
+src\components\ui\select.tsx : import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+src\components\ui\select.tsx : import { Select as SelectPrimitive } from "radix-ui"
+src\components\ui\separator.tsx : import * as React from "react"
+src\components\ui\separator.tsx : import { cn } from "cn"
+src\components\ui\separator.tsx : import { Separator as SeparatorPrimitive } from "radix-ui"
+src\components\ui\sheet.tsx : import * as React from "react"
+src\components\ui\sheet.tsx : import { Dialog as SheetPrimitive } from "radix-ui"
+src\components\ui\sheet.tsx : import { cn } from "@/lib/utils"
+src\components\ui\sheet.tsx : import { Button } from "@/components/ui/button"
+src\components\ui\sheet.tsx : import { XIcon } from "lucide-react"
+src\components\ui\sidebar.tsx : import * as React from "react"
+src\components\ui\sidebar.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\sidebar.tsx : import { Slot } from "radix-ui"
+src\components\ui\sidebar.tsx : import { useIsMobile } from "@/hooks/use-mobile"
+src\components\ui\sidebar.tsx : import { cn } from "@/lib/utils"
+src\components\ui\sidebar.tsx : import { Button } from "@/components/ui/button"
+src\components\ui\sidebar.tsx : import { Input } from "@/components/ui/input"
+src\components\ui\sidebar.tsx : import { Separator } from "@/components/ui/separator"
+src\components\ui\sidebar.tsx : import { Skeleton } from "@/components/ui/skeleton"
+src\components\ui\sidebar.tsx : import { PanelLeftIcon } from "lucide-react"
+src\components\ui\skeleton.tsx : import { cn } from "@/lib/utils"
+src\components\ui\sonner.tsx : import { useTheme } from "next-themes"
+src\components\ui\sonner.tsx : import { Toaster as Sonner, type ToasterProps } from "sonner"
+src\components\ui\sonner.tsx : import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+src\components\ui\spinner.tsx : import { cn } from "cn"
+src\components\ui\spinner.tsx : import { Loader2Icon } from "lucide-react"
+src\components\ui\switch.tsx : import * as React from "react"
+src\components\ui\switch.tsx : import { cn } from "cn"
+src\components\ui\switch.tsx : import { Switch as SwitchPrimitive } from "radix-ui"
+src\components\ui\table.tsx : import * as React from "react"
+src\components\ui\table.tsx : import { cn } from "cn"
+src\components\ui\tabs.tsx : import * as React from "react"
+src\components\ui\tabs.tsx : import { cva, type VariantProps } from "class-variance-authority"
+src\components\ui\tabs.tsx : import { cn } from "cn"
+src\components\ui\tabs.tsx : import { Tabs as TabsPrimitive } from "radix-ui"
+src\components\ui\textarea.tsx : import * as React from "react"
+src\components\ui\textarea.tsx : import { cn } from "cn"
+src\components\ui\tooltip.tsx : import * as React from "react"
+src\components\ui\tooltip.tsx : import { cn } from "cn"
+src\components\ui\tooltip.tsx : import { Tooltip as TooltipPrimitive } from "radix-ui"
+src\data\activity.ts : import { createElement, type ReactNode } from "react"
+src\hooks\use-mobile.ts : import * as React from "react"
+src\lib\utils.ts : import { useState, useEffect } from "react"
+src\lib\utils.ts : import { clsx, type ClassValue } from "clsx"
+src\lib\utils.ts : import { twMerge } from "tailwind-merge"
+src\lib\utils.ts : import { supabase } from "./supabase/client"
+src\lib\ai\schemas.ts : import { z } from "zod"
+src\lib\ai\tools.ts : import { tool } from "ai"
+src\lib\ai\tools.ts : import { z } from "zod"
+src\lib\ai\tools.ts : import { createClient } from "@/lib/supabase/server"
+src\lib\schemas\logIn.ts : import { z } from "zod"
+src\lib\schemas\newproject.ts : import { z } from "zod"
+src\lib\supabase\client.ts : import { createBrowserClient } from "@supabase/ssr"
+src\lib\supabase\server.ts : import { createServerClient } from "@supabase/ssr"
+src\lib\supabase\server.ts : import { cookies } from "next/headers"
+src\types\dashboard.ts : import type { ReactNode } from 'react'
