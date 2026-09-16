@@ -248,8 +248,9 @@ const handleSubmit = (text?: string) => {
                     <Image
                                   src="/img/mascot.png"
                                    alt="Alymera AI mascot"
-                                  width={14}
-                                  height={14}
+                                  width={64}
+                                  height={64}
+                                  
                                   className="h-full w-full object-contain"
                                 />
                 </div>
